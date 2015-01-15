@@ -26,8 +26,9 @@ path = "bitflags"
 [dependencies.external]
 path = "bump-pointer"
 
-[dependencies.lazy-static-spin]
+[dependencies.lazy_static_spin]
 git = "https://github.com/RustOS-Fork-Holding-Ground/lazy-static-spin"
+branch = "spin"
 
 [dependencies.spinlock]
 git = "https://github.com/RustOS-Fork-Holding-Ground/spinlock-rs"

@@ -8,16 +8,16 @@ use arch::vga;
 // TODO(john): next line is still breaking abstractions (but I can't
 // find a nice way to init it either...)
 pub static GLOBAL: Spinlock<Terminal> = Spinlock {
-  lock: ::core::atomic::INIT_ATOMIC_BOOL,
+  lock: ::core::atomic::ATOMIC_BOOL_INIT,
   data: UnsafeCell {
     value: Terminal {
       current: Point(0,0),
-      vga: unsafe { 0 as *mut vga::Buffer } //&mut vga::GLOBAL.value
+      vga: 0 as *mut vga::Buffer //&mut vga::GLOBAL.value
     }
   },
 };
 
-struct Point(uint, uint);
+struct Point(usize, usize);
 
 pub struct Terminal {
   current: Point,
@@ -56,16 +56,16 @@ impl Terminal
   {
     let mut rows = self.get_vga_mut().iter_mut();
 
-    let mut n     = rows.next();
+    let mut n     = rows.next().unwrap();
     let mut suc_n = rows.next();
 
-    while let (&Some(ref mut a), &Some(ref mut b)) = (&mut n, &mut suc_n) {
-      ::core::mem::swap(*a, *b); // TODO(john) just need to copy b -> a
-      n = suc_n;
+    while let Some(b) = suc_n {
+      ::core::mem::swap(n, b); // TODO(john) just need to copy b -> a
+      n = b;
       suc_n = rows.next();
     }
     unsafe {
-      *n.unwrap() = ::core::mem::zeroed(); // last row
+      *n = ::core::mem::zeroed(); // last row
     }
   }
 
@@ -84,19 +84,14 @@ pub fn init_global() {
   guard.clear_screen();
 }
 
-
 impl ::io::Writer for Terminal
 {
-  //type Err = ();
+  type Err = ();
 
-  fn write(&mut self, buf: &[u8]) -> Result<uint, ()> {
+  fn write(&mut self, buf: &[u8]) -> Result<usize, ()> {
     for &c in buf.iter() {
       self.put_char(c);
     }
     Ok(buf.len())
-  }
-
-  fn flush(&mut self) -> Result<(), ()> {
-    Ok(())
   }
 }

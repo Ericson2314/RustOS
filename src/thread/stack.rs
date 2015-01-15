@@ -10,18 +10,18 @@ pub struct Stack {
 
 impl Stack {
 
-    pub fn new(size: uint) -> Stack {
+    pub fn new(size: usize) -> Stack {
         Stack { v: Vec::with_capacity(size) } 
     }
     
     /// Point to the low end of the allocated stack
-    pub fn start(&self) -> *const uint {
-        self.v.as_ptr() as *const uint
+    pub fn start(&self) -> *const usize {
+        self.v.as_ptr() as *const usize
     }
 
-    /// Point one uint beyond the high end of the allocated stack
-    pub fn end(&self) -> *const uint {
-        unsafe { self.v.as_ptr().offset(self.v.capacity() as int) as *const uint } // TODO(ryan) overflow on cast?
+    /// Point one usize beyond the high end of the allocated stack
+    pub fn end(&self) -> *const usize {
+        unsafe { self.v.as_ptr().offset(self.v.capacity() as int) as *const usize } // TODO(ryan) overflow on cast?
     }
 
 }

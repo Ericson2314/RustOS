@@ -2,26 +2,27 @@ use core::prelude::*;
 use core::num::Int;
 use core::mem::{size_of, transmute};
 
-
 use alloc::boxed::Box;
 
 use driver::NetworkDriver;
 
-pub struct NetworkStack<'a> {
-  card: Box<NetworkDriver + 'a>
+use io::Writer;
+
+pub struct NetworkStack {
+  card: Box<NetworkDriver + 'static>
 }
 
-impl<'a> NetworkStack<'a> {
+impl NetworkStack {
 
-  pub fn new(card: Box<NetworkDriver + 'a>) -> NetworkStack<'a> {
+  pub fn new(card: Box<NetworkDriver + 'static>) -> NetworkStack {
     NetworkStack { card: card }
   }
 
   pub fn test(&mut self) -> Result<(), ()> {
     let address = self.card.address();
-
-    for i in range(0, 10u) {
-      //self.card.put_frame(format!("\nhello, etherworld! sending frame # {} !\n", i).as_bytes()).ok();
+    
+    for i in range(0, 10us) {
+      write!(&mut self.card, "\nhello, etherworld! sending frame # {} !\n", i).ok().unwrap();
     }
 
     let source = address;
@@ -34,7 +35,7 @@ impl<'a> NetworkStack<'a> {
 
     let to_send = &(header, i_header, u_header, raw);
 
-    self.card.put_frame(unsafe { transmute ((to_send, size_of::<(EthernetHeader, IpHeader, UdpHeader)>() + raw.len())) }).ok();
+    self.card.write(unsafe { transmute ((to_send, size_of::<(EthernetHeader, IpHeader, UdpHeader)>() + raw.len())) }).ok();
     Ok(())
   }
 
@@ -69,7 +70,7 @@ struct IpHeader {
   tos: u8,
   length: u16,
 
-  id: [u8,..3],
+  id: [u8; 3],
   flags_fragment: u8,
 
   ttl: u8,
@@ -105,14 +106,14 @@ impl IpHeader {
 #[repr(packed)]
 struct EthernetHeader {
   //preamble: [u8,..8],
-  destination: [u8,..6],
-  source: [u8,..6],
+  destination: [u8; 6],
+  source: [u8; 6],
   typ: u16,
 }
 
 impl EthernetHeader {
 
-  fn new(source: [u8,..6], destination: [u8,..6], typ: u16) -> EthernetHeader {
+  fn new(source: [u8; 6], destination: [u8; 6], typ: u16) -> EthernetHeader {
     //let r = 0b10101010;
     //let n = 0b10101011;
     EthernetHeader {

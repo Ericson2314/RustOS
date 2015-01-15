@@ -1,9 +1,8 @@
 use core::prelude::*;
-use core::cell::UnsafeCell;
 
-use alloc::boxed::Box;
+use spinlock::Spinlock;
 
-//use io::{Reader, Writer};
+use io::{self, Reader, Writer};
 
 use arch::idt::IDT;
 use arch::gdt::GDT;
@@ -12,16 +11,10 @@ use arch::keyboard::Keyboard;
 
 // TODO remove box hack. It says it has a global destructor but I don't know why
 lazy_static_spin! {
-  pub static CURRENT_CPU: *mut CPU = {
-    unsafe {
-      let cpu: Box<UnsafeCell<CPU>> = box UnsafeCell::new(CPU::new());
-      let ret = cpu.get();
-      ::core::mem::forget(cpu); // leak memory!
-      ret
-    }
-  };
+  pub static ref CURRENT_CPU: Spinlock<CPU> = Spinlock::new(CPU::new());
 }
 
+#[derive(Eq, PartialEq, Ord, PartialOrd, Copy, Clone)]
 pub enum IRQ { // after remap
   Timer        = 0x20,
   PS2Keyboard  = 0x21,
@@ -78,8 +71,8 @@ impl CPU {
     match interrupt_number {
       0x20 => (), // timer
       0x21 => match &mut self.keyboard {
-        &Some(ref mut k) => k.got_interrupted(),
-        &None            => unsafe { debug("no keyboard installed", 0) }
+        &mut Some(ref mut k) => k.got_interrupted(),
+        &mut None            => unsafe { debug("no keyboard installed", 0) }
       },
       _ => {debug!("interrupt with no handler: {}", interrupt_number); loop {};}
     }
@@ -119,7 +112,7 @@ impl CPU {
 
 #[no_mangle]
 pub extern "C" fn unified_handler(interrupt_number: u32) {
-  unsafe { (**CURRENT_CPU).handle(interrupt_number); }
+  CURRENT_CPU.lock().handle(interrupt_number);
 }
 
 #[no_mangle]
@@ -156,6 +149,7 @@ impl PIC {
 
 }
 
+#[derive(Eq, PartialEq, Ord, PartialOrd, Copy, Clone)]
 pub struct Port {
   port_number: u16
 }
@@ -214,32 +208,15 @@ impl Port {
 
 }
 
-impl Port
+impl io::Reader for Port
 {
-  fn read(&mut self, buf: &mut [u8]) -> Result<uint, ()> {
-    for el in buf.iter_mut() {
-      *el = self.in_b();
-    }
-    Ok(buf.len())
-  }
-
-  fn write(&mut self, buf: &[u8]) -> Result<(), ()> {
-    for &byte in buf.iter() {
-      self.out_b(byte);
-    }
-    Ok(())
-  }
-}
-/*
-impl ::io::Reader for Port {
-
-  //type Err = (); // TODO use bottom type
+  type Err = (); // TODO use bottom type
 
   //fn read_u8(&mut self) -> Result<u8, ()> {
   //  Ok(self.in_b())
   //}
 
-  fn read(&mut self, buf: &mut [u8]) -> Result<uint, ()> {
+  fn read(&mut self, buf: &mut [u8]) -> Result<usize, ()> {
     for el in buf.iter_mut() {
       *el = self.in_b();
     }
@@ -247,17 +224,17 @@ impl ::io::Reader for Port {
   }
 
 }
-*/
-impl ::io::Writer for Port {
 
-  //type Err = (); // TODO use bottom type
+impl io::Writer for Port
+{
+  type Err = (); // TODO use bottom type
 
   //fn write_u8(&mut self, byte: u8) -> Result<(), ()> {
   //  self.out_b(byte);
   //  Ok(())
   //}
 
-  fn write(&mut self, buf: &[u8]) -> Result<uint, ()> {
+  fn write(&mut self, buf: &[u8]) -> Result<usize, ()> {
     for &byte in buf.iter() {
       self.out_b(byte);
     }

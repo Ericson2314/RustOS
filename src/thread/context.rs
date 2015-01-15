@@ -22,7 +22,7 @@ use thread::stack::Stack;
 
 #[allow(non_camel_case_types)]
 mod libc {
-  pub type uintptr_t = *const uint;
+  pub type usizeptr_t = *const usize;
 }
 
 // FIXME #7761: Registers is boxed so that it is 16-byte aligned, for storing
@@ -35,10 +35,10 @@ pub struct Context {
   /// Hold the registers while the task or scheduler is suspended
   regs: Box<Registers>,
   /// Lower bound and upper bound for the stack
-  _stack_bounds: Option<(uint, uint)>,
+  _stack_bounds: Option<(usize, usize)>,
 }
 
-pub type InitFn = extern "C" fn(uint, *mut (), *mut ()) -> !;
+pub type InitFn = extern "C" fn(usize, *mut (), *mut ()) -> !;
 
 impl Context {
   pub fn empty() -> Context {
@@ -57,11 +57,11 @@ impl Context {
   /// FIXME: this is basically an awful the interface. The main reason for
   ///        this is to reduce the number of allocations made when a green
   ///        task is spawned as much as possible
-  pub fn new<F: FnOnce() + Send>(init: InitFn, arg: uint, start: F,
+  pub fn new<F: FnOnce() + Send>(init: InitFn, arg: usize, start: F,
                                  stack: &mut Stack) -> Context
   {
-    let sp: *const uint = stack.end();
-    let sp: *mut uint = sp as *mut uint;
+    let sp: *const usize = stack.end();
+    let sp: *mut usize = sp as *mut usize;
     // Save and then immediately load the current context,
     // which we will then modify to call the given function when restored
     let mut regs = new_regs();
@@ -77,11 +77,11 @@ impl Context {
     // them in terms of the code running on them (and hopefully they don't
     // overflow). Additionally, their coroutine stacks are listed as being
     // zero-length, so that's how we detect what's what here.
-    let stack_base: *const uint = stack.start();
-    let bounds = if sp as libc::uintptr_t == stack_base as libc::uintptr_t {
+    let stack_base: *const usize = stack.start();
+    let bounds = if sp as libc::usizeptr_t == stack_base as libc::usizeptr_t {
       None
     } else {
-      Some((stack_base as uint, sp as uint))
+      Some((stack_base as usize, sp as usize))
     };
     return Context {
       regs: regs,
@@ -162,19 +162,19 @@ fn new_regs() -> Box<Registers> {
 #[cfg(target_arch = "x86")]
 fn initialize_call_frame(regs: &mut Registers,
                          fptr: InitFn,
-                         arg: uint,
+                         arg: usize,
                          procedure: raw::Procedure,
-                         sp: *mut uint)
+                         sp: *mut usize)
 {
-  let sp = sp as *mut uint;
+  let sp = sp as *mut usize;
   // x86 has interesting stack alignment requirements, so do some alignment
   // plus some offsetting to figure out what the actual stack should be.
   let sp = align_down(sp);
   let sp = mut_offset(sp, -4);
 
-  unsafe { *mut_offset(sp, 2) = procedure.env as uint };
-  unsafe { *mut_offset(sp, 1) = procedure.code as uint };
-  unsafe { *mut_offset(sp, 0) = arg as uint };
+  unsafe { *mut_offset(sp, 2) = procedure.env as usize };
+  unsafe { *mut_offset(sp, 1) = procedure.code as usize };
+  unsafe { *mut_offset(sp, 0) = arg as usize };
   let sp = mut_offset(sp, -1);
   unsafe { *sp = 0 }; // The final return address
 
@@ -190,13 +190,13 @@ fn initialize_call_frame(regs: &mut Registers,
 #[cfg(all(windows, target_arch = "x86_64"))]
 #[repr(C)]
 struct Registers {
-  gpr:[libc::uintptr_t, ..14],
+  gpr:[libc::usizeptr_t, ..14],
   _xmm:[simd::u32x4, ..10]
 }
 #[cfg(all(not(windows), target_arch = "x86_64"))]
 #[repr(C)]
 struct Registers {
-  gpr:[libc::uintptr_t, ..10],
+  gpr:[libc::usizeptr_t, ..10],
   _xmm:[simd::u32x4, ..6]
 }
 
@@ -216,18 +216,18 @@ fn new_regs() -> Box<Registers> {
 }
 
 #[cfg(target_arch = "x86_64")]
-fn initialize_call_frame(regs: &mut Registers, fptr: InitFn, arg: uint,
-                         procedure: raw::Procedure, sp: *mut uint) {
+fn initialize_call_frame(regs: &mut Registers, fptr: InitFn, arg: usize,
+                         procedure: raw::Procedure, sp: *mut usize) {
   extern { fn rust_bootstrap_green_task(); }
 
   // Redefinitions from rt/arch/x86_64/regs.h
-  static RUSTRT_RSP: uint = 1;
-  static RUSTRT_IP: uint = 8;
-  static RUSTRT_RBP: uint = 2;
-  static RUSTRT_R12: uint = 4;
-  static RUSTRT_R13: uint = 5;
-  static RUSTRT_R14: uint = 6;
-  static RUSTRT_R15: uint = 7;
+  static RUSTRT_RSP: usize = 1;
+  static RUSTRT_IP: usize = 8;
+  static RUSTRT_RBP: usize = 2;
+  static RUSTRT_R12: usize = 4;
+  static RUSTRT_R13: usize = 5;
+  static RUSTRT_R14: usize = 6;
+  static RUSTRT_R15: usize = 7;
 
   let sp = align_down(sp);
   let sp = mut_offset(sp, -1);
@@ -236,37 +236,37 @@ fn initialize_call_frame(regs: &mut Registers, fptr: InitFn, arg: uint,
   unsafe { *sp = 0; }
 
   debug!("creating call frame");
-  debug!("fptr {:#x}", fptr as libc::uintptr_t);
+  debug!("fptr {:#x}", fptr as libc::usizeptr_t);
   debug!("arg {:#x}", arg);
   debug!("sp {}", sp);
 
   // These registers are frobbed by rust_bootstrap_green_task into the right
   // location so we can invoke the "real init function", `fptr`.
-  regs.gpr[RUSTRT_R12] = arg as libc::uintptr_t;
-  regs.gpr[RUSTRT_R13] = procedure.code as libc::uintptr_t;
-  regs.gpr[RUSTRT_R14] = procedure.env as libc::uintptr_t;
-  regs.gpr[RUSTRT_R15] = fptr as libc::uintptr_t;
+  regs.gpr[RUSTRT_R12] = arg as libc::usizeptr_t;
+  regs.gpr[RUSTRT_R13] = procedure.code as libc::usizeptr_t;
+  regs.gpr[RUSTRT_R14] = procedure.env as libc::usizeptr_t;
+  regs.gpr[RUSTRT_R15] = fptr as libc::usizeptr_t;
 
   // These registers are picked up by the regular context switch paths. These
   // will put us in "mostly the right context" except for frobbing all the
   // arguments to the right place. We have the small trampoline code inside of
   // rust_bootstrap_green_task to do that.
-  regs.gpr[RUSTRT_RSP] = sp as libc::uintptr_t;
-  regs.gpr[RUSTRT_IP] = rust_bootstrap_green_task as libc::uintptr_t;
+  regs.gpr[RUSTRT_RSP] = sp as libc::usizeptr_t;
+  regs.gpr[RUSTRT_IP] = rust_bootstrap_green_task as libc::usizeptr_t;
 
   // Last base pointer on the stack should be 0
   regs.gpr[RUSTRT_RBP] = 0;
 }
 
 #[cfg(target_arch = "arm")]
-type Registers = [libc::uintptr_t, ..32];
+type Registers = [libc::usizeptr_t, ..32];
 
 #[cfg(target_arch = "arm")]
 fn new_regs() -> Box<Registers> { box {[0, .. 32]} }
 
 #[cfg(target_arch = "arm")]
-fn initialize_call_frame(regs: &mut Registers, fptr: InitFn, arg: uint,
-                         procedure: raw::Procedure, sp: *mut uint) {
+fn initialize_call_frame(regs: &mut Registers, fptr: InitFn, arg: usize,
+                         procedure: raw::Procedure, sp: *mut usize) {
   extern { fn rust_bootstrap_green_task(); }
 
   let sp = align_down(sp);
@@ -279,17 +279,17 @@ fn initialize_call_frame(regs: &mut Registers, fptr: InitFn, arg: uint,
   // ARM uses the same technique as x86_64 to have a landing pad for the start
   // of all new green tasks. Neither r1/r2 are saved on a context switch, so
   // the shim will copy r3/r4 into r1/r2 and then execute the function in r5
-  regs[0] = arg as libc::uintptr_t;              // r0
-  regs[3] = procedure.code as libc::uintptr_t;   // r3
-  regs[4] = procedure.env as libc::uintptr_t;    // r4
-  regs[5] = fptr as libc::uintptr_t;             // r5
-  regs[13] = sp as libc::uintptr_t;                          // #52 sp, r13
-  regs[14] = rust_bootstrap_green_task as libc::uintptr_t;   // #56 pc, r14 --> lr
+  regs[0] = arg as libc::usizeptr_t;              // r0
+  regs[3] = procedure.code as libc::usizeptr_t;   // r3
+  regs[4] = procedure.env as libc::usizeptr_t;    // r4
+  regs[5] = fptr as libc::usizeptr_t;             // r5
+  regs[13] = sp as libc::usizeptr_t;                          // #52 sp, r13
+  regs[14] = rust_bootstrap_green_task as libc::usizeptr_t;   // #56 pc, r14 --> lr
 }
 
 #[cfg(any(target_arch = "mips",
           target_arch = "mipsel"))]
-type Registers = [libc::uintptr_t, ..32];
+type Registers = [libc::usizeptr_t, ..32];
 
 #[cfg(any(target_arch = "mips",
           target_arch = "mipsel"))]
@@ -297,8 +297,8 @@ fn new_regs() -> Box<Registers> { box {[0, .. 32]} }
 
 #[cfg(any(target_arch = "mips",
           target_arch = "mipsel"))]
-fn initialize_call_frame(regs: &mut Registers, fptr: InitFn, arg: uint,
-                         procedure: raw::Procedure, sp: *mut uint) {
+fn initialize_call_frame(regs: &mut Registers, fptr: InitFn, arg: usize,
+                         procedure: raw::Procedure, sp: *mut usize) {
   let sp = align_down(sp);
   // sp of mips o32 is 8-byte aligned
   let sp = mut_offset(sp, -2);
@@ -306,17 +306,17 @@ fn initialize_call_frame(regs: &mut Registers, fptr: InitFn, arg: uint,
   // The final return address. 0 indicates the bottom of the stack
   unsafe { *sp = 0; }
 
-  regs[4] = arg as libc::uintptr_t;
-  regs[5] = procedure.code as libc::uintptr_t;
-  regs[6] = procedure.env as libc::uintptr_t;
-  regs[29] = sp as libc::uintptr_t;
-  regs[25] = fptr as libc::uintptr_t;
-  regs[31] = fptr as libc::uintptr_t;
+  regs[4] = arg as libc::usizeptr_t;
+  regs[5] = procedure.code as libc::usizeptr_t;
+  regs[6] = procedure.env as libc::usizeptr_t;
+  regs[29] = sp as libc::usizeptr_t;
+  regs[25] = fptr as libc::usizeptr_t;
+  regs[31] = fptr as libc::usizeptr_t;
 }
 
-fn align_down(sp: *mut uint) -> *mut uint {
-  let sp = (sp as uint) & !(16 - 1);
-  sp as *mut uint
+fn align_down(sp: *mut usize) -> *mut usize {
+  let sp = (sp as usize) & !(16 - 1);
+  sp as *mut usize
 }
 
 // ptr::mut_offset is positive ints only

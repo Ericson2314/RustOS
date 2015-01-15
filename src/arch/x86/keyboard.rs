@@ -4,6 +4,7 @@ use arch::cpu::Port;
 
 static KEY_CODE_TO_ASCII: &'static [u8] = b"??1234567890-=??qwertyuiop[]\n?asdfghjkl;'`?\\zxcvbnm,./?*? ?"; 
 
+#[derive(Copy, Clone)]
 pub struct Keyboard {
   callback: fn (u8) -> (),
   control_port: Port,
@@ -46,7 +47,7 @@ impl Keyboard {
   
   pub fn got_interrupted(&mut self) {
     let keycode = self.data_port.in_b();
-    match KEY_CODE_TO_ASCII.get(keycode as uint) {
+    match KEY_CODE_TO_ASCII.get(keycode as usize) {
       Some(ascii) => {
 	let func = self.callback;
 	func(*ascii);

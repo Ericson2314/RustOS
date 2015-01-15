@@ -3,7 +3,7 @@ use core::mem::{transmute, size_of};
 
 use collections::Vec;
 
-static GDT_SIZE: uint = 3;
+static GDT_SIZE: usize = 3;
 
 extern "C" {
   
@@ -14,15 +14,16 @@ extern "C" {
 // TODO made pub to get around error
 #[allow(dead_code)]
 #[repr(packed)]
+#[derive(Eq, PartialEq, Ord, PartialOrd, Copy, Clone)]
 pub struct GDTEntry {
-  bytes: [u8,..8]
+  bytes: [u8; 8]
 }
 
 impl GDTEntry {
 
   fn new(mut limit: u32, base: u32, typ: u8) -> GDTEntry {
 
-    let mut target: [u8,..8] = [0,..8];
+    let mut target: [u8; 8] = [0; 8];
 
     // adapted from http://wiki.osdev.org/GDT_Tutorial
     // Check the limit to make sure that it can be encoded
@@ -55,7 +56,7 @@ impl GDTEntry {
   }
   
   fn null() -> GDTEntry {
-    GDTEntry { bytes: [0,..8] } 
+    GDTEntry { bytes: [0; 8] } 
   }
 
 }

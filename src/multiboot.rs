@@ -163,7 +163,7 @@ pub struct multiboot_info {
 impl multiboot_info {
 
   fn has_flag(&self, flag_number: u8) -> bool {
-    return (self.flags >> flag_number as uint) & 0x1 == 0x1;
+    return (self.flags >> flag_number as usize) & 0x1 == 0x1;
   }
 
   pub unsafe fn multiboot_stuff(&self) {

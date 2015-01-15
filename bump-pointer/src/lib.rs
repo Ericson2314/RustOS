@@ -1,6 +1,5 @@
-#![feature(globs)]
-
 #![no_std]
+#![allow(unstable)]
 
 extern crate core;
 
@@ -24,12 +23,12 @@ pub fn set_allocator(start: *mut u8, stop: *mut u8) {
 
 pub trait Allocator
 {
-  fn allocate(&mut self, size: uint, align: uint) -> Option<*mut u8>;
+  fn allocate(&mut self, size: usize, align: usize) -> Option<*mut u8>;
 
-  fn deallocate(&mut self, ptr: *mut u8, old_size: uint, align: uint);
+  fn deallocate(&mut self, ptr: *mut u8, old_size: usize, align: usize);
 
-  fn reallocate(&mut self, ptr: *mut u8, old_size: uint, size: uint,
-                align: uint) -> Option<*mut u8>
+  fn reallocate(&mut self, ptr: *mut u8, old_size: usize, size: usize,
+                align: usize) -> Option<*mut u8>
   {
     let attempt = self.allocate(size, align);
     if let Some(new) = attempt {
@@ -39,19 +38,19 @@ pub trait Allocator
     attempt
   }
 
-  fn reallocate_inplace(&mut self, _ptr: *mut u8, old_size: uint, _size: uint,
-                        _align: uint) -> uint
+  fn reallocate_inplace(&mut self, _ptr: *mut u8, old_size: usize, _size: usize,
+                        _align: usize) -> usize
   {
     old_size
   }
 
-  fn usable_size(&mut self, size: uint, _align: uint) -> uint
+  fn usable_size(&mut self, size: usize, _align: usize) -> usize
   {
     size
   }
   //fn stats_print(&mut self);
 
-  fn debug(&mut self) -> (*mut u8, uint);
+  fn debug(&mut self) -> (*mut u8, usize);
 }
 
 pub struct BumpPointer {
@@ -69,15 +68,15 @@ impl BumpPointer
 impl Allocator for BumpPointer
 {
   #[inline]
-  fn allocate(&mut self, size: uint, align: uint) -> Option<*mut u8>
+  fn allocate(&mut self, size: usize, align: usize) -> Option<*mut u8>
   {
-    let aligned: uint = {
-      let a = self.start as uint + align - 1;
+    let aligned: usize = {
+      let a = self.start as usize + align - 1;
       a - (a % align)
     };
     let new_start = aligned + size;
 
-    if new_start > self.stop as uint {
+    if new_start > self.stop as usize {
       None
     } else {
       self.start = new_start as *mut u8;
@@ -86,15 +85,15 @@ impl Allocator for BumpPointer
   }
 
   #[inline]
-  fn deallocate(&mut self, _ptr: *mut u8, _old_size: uint, _align: uint) { }
+  fn deallocate(&mut self, _ptr: *mut u8, _old_size: usize, _align: usize) { }
 
   #[inline]
-  fn debug(&mut self) -> (*mut u8, uint) {
-    (self.start, self.stop as uint - self.start as uint)
+  fn debug(&mut self) -> (*mut u8, usize) {
+    (self.start, self.stop as usize - self.start as usize)
   }
 }
 
-pub fn allocate(size: uint, align: uint) -> *mut u8 {
+pub fn allocate(size: usize, align: usize) -> *mut u8 {
   unsafe {
     match allocator.allocate(size, align) {
     Some(ptr) => ptr,
@@ -103,14 +102,14 @@ pub fn allocate(size: uint, align: uint) -> *mut u8 {
   }
 }
 
-pub fn deallocate(ptr: *mut u8, old_size: uint, align: uint) {
+pub fn deallocate(ptr: *mut u8, old_size: usize, align: usize) {
   unsafe {
     allocator.deallocate(ptr, old_size, align)
   }
 }
 
-pub fn reallocate(ptr: *mut u8, old_size: uint, size: uint,
-                              align: uint) -> *mut u8 {
+pub fn reallocate(ptr: *mut u8, old_size: usize, size: usize,
+                              align: usize) -> *mut u8 {
   unsafe {
     match allocator.reallocate(ptr, old_size, size, align) {
       Some(ptr) => ptr,
@@ -119,14 +118,14 @@ pub fn reallocate(ptr: *mut u8, old_size: uint, size: uint,
   }
 }
 
-pub fn reallocate_inplace(ptr: *mut u8, old_size: uint, size: uint,
-                                      align: uint) -> uint {
+pub fn reallocate_inplace(ptr: *mut u8, old_size: usize, size: usize,
+                                      align: usize) -> usize {
   unsafe {
     allocator.reallocate_inplace(ptr, old_size, size, align)
   }
 }
 
-pub fn usable_size(size: uint, align: uint) -> uint {
+pub fn usable_size(size: usize, align: usize) -> usize {
   unsafe {
     allocator.usable_size(size, align)
   }

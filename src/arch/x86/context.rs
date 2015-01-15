@@ -14,7 +14,7 @@ pub struct Context {
 #[allow(dead_code)]
 #[repr(packed)]
 struct Registers {
-    regs: [u32, ..7]
+    regs: [u32; 7]
 }
 
 extern "C" {
@@ -33,11 +33,11 @@ impl Context {
   
   pub fn empty() -> Context {
     unsafe {
-        Context { stack: transmute::<u64, Box<[u8]>>(0_u64), instruction_pointer: transmute(0u), regs: Context::empty_regs(), esp: 0}
+        Context { stack: transmute::<u64, Box<[u8]>>(0_u64), instruction_pointer: transmute(0us), regs: Context::empty_regs(), esp: 0}
     }
   }
 
-  pub fn new(func: extern "C" fn() -> (), stack: Box<[u8]>, esp: uint) -> Context {
+  pub fn new(func: extern "C" fn() -> (), stack: Box<[u8]>, esp: usize) -> Context {
     unsafe {
       let mut t = Context::empty();
       save_context(&mut t);

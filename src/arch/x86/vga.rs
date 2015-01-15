@@ -1,19 +1,18 @@
-use core::prelude::*;
 use core::cell::UnsafeCell;
 
 
 // TODO(john) make these a bit less hard coded
-pub const X_MAX: uint = 80;
-pub const Y_MAX: uint = 24;
+pub const X_MAX: usize = 80;
+pub const Y_MAX: usize = 24;
 
-pub type Buffer = [[Entry, ..X_MAX], ..Y_MAX];
+pub type Buffer = [[Entry; X_MAX]; Y_MAX];
 
 extern {
   #[link_name = "vga_buffer"]
   pub static mut GLOBAL: UnsafeCell<Buffer>;
 }
 
-#[deriving(Eq, PartialEq, Ord, PartialOrd, Copy, Clone)]
+#[derive(Eq, PartialEq, Ord, PartialOrd, Copy, Clone)]
 #[repr(u8)]
 pub enum Color {
   Black      = 0,
@@ -34,6 +33,7 @@ pub enum Color {
   White      = 15,
 }
 
+#[derive(Eq, PartialEq, Ord, PartialOrd, Copy, Clone)]
 pub struct Entry(u16);
 
 //impl Copy for Entry { }
@@ -42,8 +42,8 @@ impl Entry
 {
   pub fn new(character: u8, foreground: Color, background: Color) -> Entry
   {
-    let color = (background as u8 << 4) | (foreground as u8);
-    Entry((color as u16 << 8) | (character as u16))
+    let color = ((background as u8) << 4) | (foreground as u8);
+    Entry(((color as u16) << 8) | (character as u16))
   }
 
   pub fn eliminate(Entry(bits) : Entry) -> (u8, Color, Color) {

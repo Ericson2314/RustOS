@@ -3,7 +3,7 @@ use core::mem::{transmute, size_of};
 
 use collections::Vec;
 
-static IDT_SIZE: uint = 256;
+static IDT_SIZE: usize = 256;
 
 #[allow(dead_code)]
 #[repr(packed)]
@@ -52,7 +52,9 @@ pub struct IDT {
 impl IDT {
 
   pub fn new() -> IDT {
-    let mut me = IDT { table: Vec::from_fn(IDT_SIZE, |_| IDTEntry::no_op() ) };
+    let mut me = IDT {
+      table: (0..IDT_SIZE).map(|_| IDTEntry::no_op()).collect()
+    };
     unsafe { 
       register_all_callbacks(&mut me);
     }
@@ -60,7 +62,7 @@ impl IDT {
   }
   
   pub fn add_entry(&mut self, index: u32, f: unsafe extern "C" fn() -> ()) {
-    self.table[index as uint] = IDTEntry::new(f);
+    self.table[index as usize] = IDTEntry::new(f);
   }
   
   pub unsafe fn enable(&mut self) {

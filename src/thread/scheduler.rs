@@ -27,7 +27,7 @@ lazy_static_spin! {
   static SCHEDULER: UnsafeCell<Scheduler<'static>> = UnsafeCell::new(Scheduler::new());
 }
 
-extern "C" fn run_thunk(sched: uint, code: *mut (), env: *mut ()) -> ! {
+extern "C" fn run_thunk(sched: usize, code: *mut (), env: *mut ()) -> ! {
   let scheduler: &mut Scheduler = unsafe { transmute(sched) };
   let c: |&mut Scheduler| -> () = unsafe { transmute((code, env)) };
   c(scheduler);
@@ -57,7 +57,7 @@ impl<'a> Scheduler<'a> {
   }
   
   fn new_tcb(&self, func: extern "C" fn() -> ()) -> Tcb {
-    const STACK_SIZE: uint = 1024 * 1024;
+    const STACK_SIZE: usize = 1024 * 1024;
     let mut stack = Stack::new(STACK_SIZE);
 
     let p  = move |:scheduler: &mut Scheduler| {
@@ -84,7 +84,7 @@ impl<'a> Scheduler<'a> {
   
 }
 
-fn inner_thread_test(arg: uint) {
+fn inner_thread_test(arg: usize) {
   debug!("arg is {}", arg)
 }
 

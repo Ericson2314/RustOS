@@ -1,26 +1,26 @@
 #![no_std]
-#![feature(associated_types)]
-#![feature(phase)]
-#![allow(ctypes)]
-#![feature(globs)]
+
+#![allow(unstable)]
+#![allow(improper_ctypes)]
+
 #![feature(asm)]
-#![feature(macro_rules)]
 #![feature(lang_items)]
+#![feature(box_syntax)]
 
 // not directly used, but needed to link to llvm emitted calls
 extern crate rlibc;
 
-#[phase(plugin, link)]
+#[macro_use]
 //extern crate std; // for useful macros and IO interfaces
 extern crate core;
 extern crate alloc;
 extern crate collections;
 
 
-#[phase(plugin)]
+#[macro_use] #[no_link]
 extern crate bitflags;
 extern crate "external" as bump_ptr;
-#[phase(plugin, link)]
+#[macro_use]
 extern crate lazy_static_spin;
 extern crate spinlock;
 
@@ -34,7 +34,7 @@ use pci::Pci;
 use driver::DriverManager;
 //use thread::scheduler;
 
-#[macro_escape]
+#[macro_use]
 mod log;
 pub mod arch;
 mod terminal;
@@ -67,15 +67,10 @@ fn put_char(c: u8) {
 }
 
 lazy_static_spin! {
-  static TEST: *mut Vec<&'static str> = {
-    let mut v = box Vec::new();
-    v.push("hi from lazy sttaic");
-    unsafe {
-      use core::mem::transmute;
-      let ptr = transmute(&*v);
-      core::mem::forget(v);
-      ptr
-    }
+  static ref TEST: Vec<&'static str> = {
+    let mut v = Vec::new();
+    v.push("hi from lazy static");
+    v
   };
 }
 
@@ -84,7 +79,7 @@ pub extern "C" fn main(magic: u32, info: *mut multiboot_info) {
   unsafe {
     terminal::init_global();
 
-    bump_ptr::set_allocator((15u * 1024 * 1024) as *mut u8, (20u * 1024 * 1024) as *mut u8);
+    bump_ptr::set_allocator((15us * 1024 * 1024) as *mut u8, (20us * 1024 * 1024) as *mut u8);
     panic::init();
     test_allocator();
 
@@ -96,13 +91,12 @@ pub extern "C" fn main(magic: u32, info: *mut multiboot_info) {
     }
 
     debug!("{}", (**TEST)[0]);
-    let cpu = *cpu::CURRENT_CPU;
 
-    (*cpu).make_keyboard(put_char);
+    cpu::CURRENT_CPU.lock().make_keyboard(put_char);
 
-    (*cpu).enable_interrupts();
+    cpu::CURRENT_CPU.lock().enable_interrupts();
     debug!("Going to interrupt: ");
-    (*cpu).test_interrupt();
+    cpu::CURRENT_CPU.lock().test_interrupt();
     debug!("    back from interrupt!");
 
     debug!("start scheduling...");
@@ -113,17 +107,15 @@ pub extern "C" fn main(magic: u32, info: *mut multiboot_info) {
 
     info!("Kernel is done!");
     loop {
-      (*cpu) .idle()
+      cpu::CURRENT_CPU.lock().idle()
     }
   }
 }
 
 fn pci_stuff() {
-  use pci::*;
-
   let mut pci = Pci::new();
   pci.init();
-  let mut drivers = (&mut pci as &mut DriverManager).get_drivers();
+  let mut drivers = pci.get_drivers();
   debug!("Found drivers for {} pci devices", drivers.len());
   match drivers.pop() {
     Some(mut driver) => {
@@ -168,7 +160,7 @@ extern fn eh_personality() {}
 mod std {
   pub use core::clone;
   pub use core::cmp;
-  pub use core::kinds;
+  pub use core::marker;
   pub use core::option;
   pub use core::fmt;
   pub use core::hash;

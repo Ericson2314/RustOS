@@ -9,11 +9,11 @@ use pci::{PciManifest, PortGranter};
 
 pub struct Rtl8139 {
   command_register: Port, // TODO(ryan): better abstraction for registers (i.e., should take byte-width into consideration + also be for mmap)
-  transmit_address: [Port,..4],
-  transmit_status: [Port,..4],
-  id: [Port,..6],
+  transmit_address: [Port; 4],
+  transmit_status: [Port; 4],
+  id: [Port; 6],
   config_1: Port,
-  descriptor: uint
+  descriptor: usize
 }
 
   
@@ -26,8 +26,8 @@ impl Rtl8139 { // TODO(ryan): is there already a frame oriented interface in std
 
   pub fn new(granter: PortGranter) -> Rtl8139 {
     
-    let p = |off: u16| -> Port {
-      granter.get(off as uint)
+    let p = |&: off: u16| -> Port {
+      granter.get(off as usize)
     };
     
     Rtl8139 { config_1: p(0x52),
@@ -57,10 +57,12 @@ impl Driver for Rtl8139 {
 
 }
 
-impl NetworkDriver for Rtl8139 {
+impl ::io::Writer for Rtl8139 {
+  
+  type Err = ();
 
-  fn put_frame(&mut self, bytes: &[u8]) -> Result<(), ()> {
-    let slice_bytes: ::core::raw::Slice<u8> = unsafe { transmute(bytes) };
+  fn write(&mut self, buf: &[u8]) -> Result<usize, ()> {
+    let slice_bytes: ::core::raw::Slice<u8> = unsafe { transmute(buf) };
 
     trace!("sending {} bytes", slice_bytes.len);
     
@@ -71,12 +73,15 @@ impl NetworkDriver for Rtl8139 {
     
     while (self.transmit_status[self.descriptor].in_l() & 0x8000) == 0 { } // TODO(ryan): this is fragile if error sending...
     self.descriptor = (self.descriptor + 1) % 4;
-    Ok(())
-  }  
-  
-  fn address(&mut self) -> [u8,..6] {
-    let mut ret = [0,..6];
-    for i in range(0, 6u) {
+    Ok(slice_bytes.len)
+  }
+}
+
+impl NetworkDriver for Rtl8139
+{  
+  fn address(&mut self) -> [u8; 6] {
+    let mut ret = [0; 6];
+    for i in range(0, 6us) {
       ret[i] = self.id[i].in_b();
     }
     ret
