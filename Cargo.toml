@@ -8,8 +8,8 @@ name = "rustos"
 crate-type = [ "staticlib" ]
 
 
-#[dependencies.core]
-#path = "lib/libcore"
+[dependencies.core]
+path = "lib/libcore"
 
 [dependencies.alloc]
 path = "lib/liballoc"
@@ -32,5 +32,5 @@ git = "https://github.com/RustOS-Fork-Holding-Ground/lazy-static-spin"
 [dependencies.spinlock]
 git = "https://github.com/RustOS-Fork-Holding-Ground/spinlock-rs"
 
-[dependencies]
-rlibc = "*"
+[dependencies.rlibc]
+rlibc = "https://github.com/RustOS-Fork-Holding-Ground/rlibc"

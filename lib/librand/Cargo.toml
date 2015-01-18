@@ -6,6 +6,5 @@ authors = [ "you@example.com" ]
 [lib]
 name = "rand"
 
-
-#[dependencies.core]
-#path = "../libcore"
+[dependencies.core]
+path = "../libcore"
