@@ -9,15 +9,15 @@ crate-type = [ "staticlib" ]
 
 
 [dependencies.core]
-path = "lib/libcore"
+git = "https://github.com/RustOS-Fork-Holding-Ground/rust.git"
 
 [dependencies.alloc]
-path = "lib/liballoc"
+git = "https://github.com/RustOS-Fork-Holding-Ground/rust.git"
 default-features = false
 features = [ "external_crate" ]
 
 [dependencies.collections]
-path = "lib/libcollections"
+git = "https://github.com/RustOS-Fork-Holding-Ground/rust.git"
 
 
 [dependencies.bitflags]
