@@ -69,7 +69,7 @@ fn test_allocator() {
 }
 
 fn put_char(c: u8) {
-    __print!("{}", c as char);
+  __print!("{}", c as char);
 }
 
 lazy_static_spin! {
@@ -145,7 +145,7 @@ pub extern "C" fn __morestack() {
 
 #[no_mangle]
 pub extern "C" fn abort() -> ! {
-    unsafe { core::intrinsics::abort(); }
+  unsafe { core::intrinsics::abort(); }
 }
 
 #[no_mangle]
@@ -164,10 +164,5 @@ extern fn eh_personality() {}
 // for deriving
 #[doc(hidden)]
 mod std {
-  pub use core::clone;
-  pub use core::cmp;
-  pub use core::marker;
-  pub use core::option;
-  pub use core::fmt;
-  pub use core::hash;
+  pub use core::*;
 }
