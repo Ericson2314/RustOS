@@ -30,7 +30,7 @@ path = "bump-pointer"
 git = "https://github.com/RustOS-Fork-Holding-Ground/lazy-static-spin"
 branch = "spin"
 
-[dependencies.spinlock]
+[dependencies.spin]
 git = "https://github.com/RustOS-Fork-Holding-Ground/spinlock-rs"
 
 [dependencies.rlibc]

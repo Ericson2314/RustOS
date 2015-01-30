@@ -1,6 +1,6 @@
 use core::prelude::*;
 
-use spinlock::Spinlock;
+use spin;
 
 use io::{self, Reader, Writer};
 
@@ -11,7 +11,7 @@ use arch::keyboard::Keyboard;
 
 // TODO remove box hack. It says it has a global destructor but I don't know why
 lazy_static_spin! {
-  pub static ref CURRENT_CPU: Spinlock<CPU> = Spinlock::new(CPU::new());
+  pub static ref CURRENT_CPU: spin::Mutex<CPU> = spin::Mutex::new(CPU::new());
 }
 
 #[derive(Eq, PartialEq, Ord, PartialOrd, Copy, Clone)]

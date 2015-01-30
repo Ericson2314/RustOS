@@ -1,13 +1,13 @@
 use core::prelude::*;
 use core::cell::UnsafeCell;
 
-use spinlock::Spinlock;
+use spin;
 
 use arch::vga;
 
 // TODO(john): next line is still breaking abstractions (but I can't
 // find a nice way to init it either...)
-pub static GLOBAL: Spinlock<Terminal> = Spinlock {
+pub static GLOBAL: spin::Mutex<Terminal> = spin::Mutex {
   lock: ::core::atomic::ATOMIC_BOOL_INIT,
   data: UnsafeCell {
     value: Terminal {

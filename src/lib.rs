@@ -22,7 +22,7 @@ extern crate bitflags;
 extern crate "external" as bump_ptr;
 #[macro_use]
 extern crate lazy_static_spin;
-extern crate spinlock;
+extern crate spin;
 
 use core::prelude::*;
 

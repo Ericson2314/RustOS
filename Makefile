@@ -35,7 +35,7 @@ boot.iso: boot.bin
 compiler-rt.o: src/dummy-compiler-rt.s # needed for staticlib creation
 	$(AS)  -o $@ $<
 
-%.s: lib/rust/src/rt/arch/i386/%.S
+%.s: ../rust/src/rt/arch/i386/%.S
 	$(CPP) -o $@ $<
 
 %.o: src/arch/x86/%.s

@@ -10,5 +10,5 @@ authors = [ "you@example.com" ]
 name = "external"
 
 
-#[dependencies.core]
-#path = "lib/libcore"
+[dependencies.core]
+git = "https://github.com/RustOS-Fork-Holding-Ground/rust.git"
