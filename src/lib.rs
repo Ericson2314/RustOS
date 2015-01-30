@@ -1,11 +1,17 @@
 #![no_std]
 
-#![allow(unstable)]
+
 #![allow(improper_ctypes)]
 
 #![feature(asm)]
 #![feature(lang_items)]
 #![feature(box_syntax)]
+
+#![feature(core)]
+#![feature(alloc)]
+#![feature(collections)]
+
+#![feature(hash)]
 
 // not directly used, but needed to link to llvm emitted calls
 extern crate rlibc;

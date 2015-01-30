@@ -197,8 +197,7 @@ impl DriverManager for Pci {
     if io_offset != 0 {
       let manifest = Rtl8139::manifest();
       let granter = PortGranter { base: io_offset as usize, limit: manifest.register_limit as usize };
-      //// TODO(john) seems to be an associated types bug blocking this
-      //ret.push(box Rtl8139::new(granter));// as Box<NetworkDriver + 'static>);
+      ret.push(box Rtl8139::new(granter));
     }
 
     ret

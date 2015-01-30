@@ -16,7 +16,7 @@ pub struct Rtl8139 {
   descriptor: usize
 }
 
-  
+
 impl Rtl8139 { // TODO(ryan): is there already a frame oriented interface in std libs to implement?
 
   pub fn manifest() -> PciManifest {
@@ -25,43 +25,42 @@ impl Rtl8139 { // TODO(ryan): is there already a frame oriented interface in std
 
 
   pub fn new(granter: PortGranter) -> Rtl8139 {
-    
+
     let p = |&: off: u16| -> Port {
       granter.get(off as usize)
     };
-    
-    Rtl8139 { config_1: p(0x52),
-	      command_register: p(0x37),
-	      transmit_address: [p(0x20), p(0x24), p(0x28), p(0x2c)],
-	      transmit_status: [p(0x10), p(0x14), p(0x18), p(0x1c)],
-	      id: [p(0), p(1), p(2), p(3), p(4), p(5)],
-	      descriptor: 0
-	      }
+
+    Rtl8139 {
+      config_1: p(0x52),
+      command_register: p(0x37),
+      transmit_address: [p(0x20), p(0x24), p(0x28), p(0x2c)],
+      transmit_status: [p(0x10), p(0x14), p(0x18), p(0x1c)],
+      id: [p(0), p(1), p(2), p(3), p(4), p(5)],
+      descriptor: 0
+    }
   }
-  
+
 }
 
 impl Driver for Rtl8139 {
-  
+
   fn init(&mut self) {
     self.config_1.out_b(0x00);
 
     self.command_register.out_b(0x10); // reset
     while (self.command_register.in_b() & 0x10) != 0 { } // wait till back
 
-    
+
     self.command_register.out_b(0x0C); // enable transmit
     while (self.command_register.in_b() & 0x0c) != 0x0c {}
-    
+
   }
 
 }
 
-impl ::io::Writer for Rtl8139 {
-  
-  type Err = ();
-
-  fn write(&mut self, buf: &[u8]) -> Result<usize, ()> {
+impl NetworkDriver for Rtl8139
+{
+  fn put_frame(&mut self, buf: &[u8]) -> Result<usize, ()> {
     let slice_bytes: ::core::raw::Slice<u8> = unsafe { transmute(buf) };
 
     trace!("sending {} bytes", slice_bytes.len);
@@ -75,10 +74,7 @@ impl ::io::Writer for Rtl8139 {
     self.descriptor = (self.descriptor + 1) % 4;
     Ok(slice_bytes.len)
   }
-}
-
-impl NetworkDriver for Rtl8139
-{  
+  
   fn address(&mut self) -> [u8; 6] {
     let mut ret = [0; 6];
     for i in range(0, 6us) {
@@ -86,6 +82,4 @@ impl NetworkDriver for Rtl8139
     }
     ret
   }
-
-
 }
