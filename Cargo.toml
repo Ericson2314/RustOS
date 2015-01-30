@@ -21,7 +21,7 @@ git = "https://github.com/RustOS-Fork-Holding-Ground/rust.git"
 
 
 [dependencies.bitflags]
-path = "bitflags"
+git = "http://github.com/rust-lang/bitflags.git"
 
 [dependencies.external]
 path = "bump-pointer"
