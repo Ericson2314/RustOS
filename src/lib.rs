@@ -6,6 +6,7 @@
 #![feature(asm)]
 #![feature(lang_items)]
 #![feature(box_syntax)]
+#![feature(box_patterns)]
 #![feature(associated_consts)]
 #![feature(slice_patterns)]
 #![feature(const_fn)]
@@ -15,6 +16,7 @@
 
 #![feature(core, alloc, collections)]
 #![feature(no_std)]
+
 
 // not directly used, but needed to link to llvm emitted calls
 extern crate rlibc;
@@ -42,7 +44,7 @@ use collections::Vec;
 use multiboot::multiboot_info;
 use pci::Pci;
 use driver::DriverManager;
-//use thread::scheduler;
+use thread::scheduler;
 
 #[macro_use]
 mod log;
@@ -55,6 +57,7 @@ mod pci;
 mod rtl8139;
 mod driver;
 mod net;
+mod thread;
 
 
 fn test_allocator() {
@@ -109,8 +112,8 @@ pub extern "C" fn main(magic: u32, info: *mut multiboot_info) -> ! {
     arch::cpu::test_interrupt();
     debug!("Back from interrupt!");
 
-    //debug!("start scheduling...");
-    //scheduler::thread_stuff();
+    debug!("start scheduling...");
+    scheduler::thread_stuff();
 
     pci_stuff();
 
