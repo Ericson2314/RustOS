@@ -22,7 +22,6 @@
 extern crate rlibc;
 
 #[macro_use]
-//extern crate std; // for useful macros and IO interfaces
 extern crate core;
 extern crate coreio as io;
 extern crate alloc;
@@ -87,11 +86,34 @@ lazy_static_spin! {
 
 #[no_mangle]
 pub extern "C" fn main(magic: u32, info: *mut multiboot_info) -> ! {
+  terminal::init_global();
+  bump_ptr::set_allocator((15usize * 1024 * 1024) as *mut u8, (20usize * 1024 * 1024) as *mut u8);
+  debug!("kernel start!");
+  unsafe { panic::init() };
+  debug!("Going to set up CPU:");
+  unsafe { arch::cpu::init() };
+
+  debug!("And enable Interrupts");
+  unsafe { cpu::enable_interrupts() };
+
+  // we're going to now enter the scheduler to do the rest
+  let bootstrapped_thunk = move || {
+    bootstrapped_main(magic, info);
+  };
+
+  scheduler::get_scheduler().lock().schedule(box bootstrapped_thunk);
+  debug!("start scheduling...");
+  scheduler::get_scheduler().lock().bootstrap_start() // okay, scheduler, take it away!
+}
+
+fn bootstrapped_main(magic: u32, info: *mut multiboot_info) {
   unsafe {
-    terminal::init_global();
-    bump_ptr::set_allocator((15usize * 1024 * 1024) as *mut u8, (20usize * 1024 * 1024) as *mut u8);
-    debug!("kernel start!");
-    panic::init();
+    debug!("Enable interrupts again");
+    cpu::enable_interrupts();
+
+    debug!("kernel main thread start!");
+
+    debug!("Testing allocator");
     test_allocator();
 
     if magic != multiboot::MULTIBOOT_BOOTLOADER_MAGIC {
@@ -104,21 +126,16 @@ pub extern "C" fn main(magic: u32, info: *mut multiboot_info) -> ! {
     debug!("Going to test lazy_static:");
     debug!("{}", (*TEST.get_or_init())[0]);
 
-    debug!("Going to set up CPU:");
-    arch::cpu::init();
-
-    cpu::enable_interrupts();
     debug!("Going to interrupt: ");
     arch::cpu::test_interrupt();
     debug!("Back from interrupt!");
 
-    debug!("start scheduling...");
-    scheduler::thread_stuff();
-
     pci_stuff();
 
-    info!("Kernel is done!");
-    abort()
+    debug!("Testing scheduler");
+    scheduler::thread_stuff();
+
+    info!("Kernel main thread is done!");
   }
 }
 
