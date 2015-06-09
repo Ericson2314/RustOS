@@ -40,16 +40,19 @@ extern "C" fn run_thunk(thunk: &Fn() -> ()) {
   unreachable!("didn't unschedule finished thread");
 }
 
-
 impl Scheduler {
 
   pub fn new() -> Scheduler {
     let idle_task = || {
         loop {
-            trace!("in idle task");
+            trace!("in idle task 1");
+            trace!("wait done");
             get_scheduler().lock().switch();
+            trace!("switch done");
+            loop {}
         }
     };
+
     let mut s = Scheduler { queue: LinkedList::new() };
     let tcb = s.new_tcb(box idle_task);
     s.queue.push_front(tcb);
@@ -64,16 +67,12 @@ impl Scheduler {
     unreachable!();
   }
 
-  pub fn schedule(&mut self, func: Box<Fn() -> ()>) {
-    let new_tcb = self.new_tcb(func);
-    self.queue.push_back(new_tcb);
-  }
-
   fn new_tcb(&self, func: Box<Fn() -> ()>) -> Tcb {
     const STACK_SIZE: usize = 1024 * 1024;
     let stack = Stack::new(STACK_SIZE);
 
     let p = move || {
+      unsafe { cpu::enable_interrupts() };
       func();
       get_scheduler().lock().unschedule_current();
     };
@@ -82,8 +81,19 @@ impl Scheduler {
     Tcb { context: c }
   }
 
+  pub fn schedule(&mut self, func: Box<Fn() -> ()>) {
+    unsafe { cpu::disable_interrupts() };
+
+    let new_tcb = self.new_tcb(func);
+    self.queue.push_back(new_tcb);
+
+    unsafe { cpu::enable_interrupts(); }
+  }
+
   fn unschedule_current(&mut self) -> ! {
     debug!("unscheduling");
+
+    unsafe { cpu::disable_interrupts() };
 
     self.queue.pop_front(); // get rid of current
     let next = self.queue.pop_back().unwrap();
@@ -95,6 +105,8 @@ impl Scheduler {
   }
 
   pub fn switch(&mut self) {
+    debug_assert!(self.queue.len() >= 1);
+    unsafe { cpu::disable_interrupts() };
     if self.queue.len() < 2 {
       return;
     }
@@ -105,6 +117,8 @@ impl Scheduler {
 
     let (back, front) = unsafe { ends_mut(&mut self.queue) }.unwrap();
     Context::swap(&mut back.context, &front.context);
+
+    unsafe { cpu::enable_interrupts(); } // TODO(ryan): make a mutex as enabling/disabling interrupts
   }
 
 }
