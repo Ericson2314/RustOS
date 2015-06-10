@@ -51,7 +51,6 @@ pub mod arch;
 mod terminal;
 mod panic;
 mod multiboot;
-//mod thread;
 mod pci;
 mod rtl8139;
 mod driver;
