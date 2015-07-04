@@ -1,5 +1,5 @@
+#![feature(no_std, core, core_prelude)]
 #![no_std]
-#![allow(unstable)]
 
 extern crate core;
 

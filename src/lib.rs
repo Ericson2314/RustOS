@@ -6,12 +6,14 @@
 #![feature(asm)]
 #![feature(lang_items)]
 #![feature(box_syntax)]
+#![feature(associated_consts)]
+#![feature(const_fn)]
+#![feature(core_prelude)]
+#![feature(core_intrinsics)]
+#![feature(raw)]
 
-#![feature(core)]
-#![feature(alloc)]
-#![feature(collections)]
-
-#![feature(hash)]
+#![feature(core, alloc, collections)]
+#![feature(no_std)]
 
 // not directly used, but needed to link to llvm emitted calls
 extern crate rlibc;
@@ -22,10 +24,9 @@ extern crate core;
 extern crate alloc;
 extern crate collections;
 
-
 #[macro_use] #[no_link]
 extern crate bitflags;
-extern crate "external" as bump_ptr;
+extern crate external as bump_ptr;
 #[macro_use]
 extern crate lazy_static_spin;
 extern crate spin;
@@ -34,6 +35,7 @@ use core::prelude::*;
 
 use collections::Vec;
 
+use ::io::Writer;
 use multiboot::multiboot_info;
 use arch::cpu;
 use pci::Pci;
@@ -73,7 +75,7 @@ fn put_char(c: u8) {
 }
 
 lazy_static_spin! {
-  static ref TEST: Vec<&'static str> = {
+  static TEST: Vec<&'static str> = {
     let mut v = Vec::new();
     v.push("hi from lazy static");
     v
@@ -84,8 +86,8 @@ lazy_static_spin! {
 pub extern "C" fn main(magic: u32, info: *mut multiboot_info) {
   unsafe {
     terminal::init_global();
-
-    bump_ptr::set_allocator((15us * 1024 * 1024) as *mut u8, (20us * 1024 * 1024) as *mut u8);
+    bump_ptr::set_allocator((15usize * 1024 * 1024) as *mut u8, (20usize * 1024 * 1024) as *mut u8);
+    debug!("kernel start!");
     panic::init();
     test_allocator();
 
@@ -96,24 +98,23 @@ pub extern "C" fn main(magic: u32, info: *mut multiboot_info) {
       (*info).multiboot_stuff();
     }
 
-    debug!("{}", (**TEST)[0]);
+    debug!("{}", (*TEST.get_or_init())[0]);
 
-    cpu::CURRENT_CPU.lock().make_keyboard(put_char);
+    cpu::CURRENT_CPU.get_or_init().lock().make_keyboard(put_char);
 
-    cpu::CURRENT_CPU.lock().enable_interrupts();
+    cpu::CURRENT_CPU.get_or_init().lock().enable_interrupts();
     debug!("Going to interrupt: ");
-    cpu::CURRENT_CPU.lock().test_interrupt();
+    cpu::CURRENT_CPU.get_or_init().lock().test_interrupt();
     debug!("    back from interrupt!");
 
-    debug!("start scheduling...");
-
+    //debug!("start scheduling...");
     //scheduler::thread_stuff();
 
     pci_stuff();
 
     info!("Kernel is done!");
     loop {
-      cpu::CURRENT_CPU.lock().idle()
+      cpu::CURRENT_CPU.get_or_init().lock().idle()
     }
   }
 }

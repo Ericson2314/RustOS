@@ -1,14 +1,11 @@
 [package]
 
-# name is mandated by liballoc for nowx
+# name is mandated by liballoc for now
 
 name = "external"
 version = "0.0.1"
 authors = [ "you@example.com" ]
 
-[lib]
-name = "external"
-
-
 [dependencies.core]
 git = "https://github.com/RustOS-Fork-Holding-Ground/rust.git"
+branch = "rustos"

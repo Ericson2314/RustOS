@@ -11,7 +11,7 @@ use arch::keyboard::Keyboard;
 
 // TODO remove box hack. It says it has a global destructor but I don't know why
 lazy_static_spin! {
-  pub static ref CURRENT_CPU: spin::Mutex<CPU> = spin::Mutex::new(CPU::new());
+  pub static CURRENT_CPU: spin::Mutex<CPU> = spin::Mutex::new(unsafe { CPU::new() });
 }
 
 #[derive(Eq, PartialEq, Ord, PartialOrd, Copy, Clone)]
@@ -112,7 +112,7 @@ impl CPU {
 
 #[no_mangle]
 pub extern "C" fn unified_handler(interrupt_number: u32) {
-  CURRENT_CPU.lock().handle(interrupt_number);
+  CURRENT_CPU.get_or_init().lock().handle(interrupt_number);
 }
 
 #[no_mangle]

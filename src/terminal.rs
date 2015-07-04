@@ -1,5 +1,4 @@
 use core::prelude::*;
-use core::cell::UnsafeCell;
 
 use spin;
 
@@ -7,15 +6,10 @@ use arch::vga;
 
 // TODO(john): next line is still breaking abstractions (but I can't
 // find a nice way to init it either...)
-pub static GLOBAL: spin::Mutex<Terminal> = spin::Mutex {
-  lock: ::core::atomic::ATOMIC_BOOL_INIT,
-  data: UnsafeCell {
-    value: Terminal {
-      current: Point(0,0),
-      vga: 0 as *mut vga::Buffer //&mut vga::GLOBAL.value
-    }
-  },
-};
+pub static GLOBAL: spin::Mutex<Terminal> = spin::Mutex::new(Terminal {
+  current: Point(0,0),
+  vga: 0 as *mut vga::Buffer //&mut vga::GLOBAL.value
+});
 
 struct Point(usize, usize);
 
