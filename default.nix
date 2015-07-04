@@ -1,9 +1,10 @@
-(import <nixpkgs> {}).callPackage (
-{stdenv, nasm, qemu, gdb}: stdenv.mkDerivation rec {
+{ stdenv, gdb, nasm, qemu, rustcNightly }:
+
+stdenv.mkDerivation {
   name = "RustOS";
 
-  nativeBuildInputs = [ gdb nasm qemu ];
-  src = ./src;
+  nativeBuildInputs = [ gdb nasm qemu rustcNightly.rustc rustcNightly.cargo ];
+  src = ./.;
 
   enableParallelBuilding = true;
-}) {}
+}
