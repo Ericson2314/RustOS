@@ -1,18 +1,10 @@
 .section .text
 .global lgdt
-.global test
 .global no_op
-.global interrupt
 .global unified_handler
 .global register_all_callbacks
 
 no_op:
-  iret
-
-test:
-  pusha
-  call callback
-  popa
   iret
   
 # args: (pointer to gtd)
@@ -31,12 +23,6 @@ lgdt:
    ljmp $0x8,$out # set the cs register to 0x8 (code segment)
 out:
    ret
-
-# u8 -> ()
-interrupt:
-  int $0x20
-  ret
-
 
 .altmacro
   

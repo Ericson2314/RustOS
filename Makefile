@@ -4,7 +4,7 @@ AS=as -march=i386 --32
 LD=ld -melf_i386 -nostdlib
 QEMU=qemu-system-i386
 TARGET=i686-unknown-linux-gnu
-QEMUARGS=-device rtl8139,vlan=0 -net user,id=net0,vlan=0 -net dump,vlan=0,file=/tmp/rustos-dump.pcap
+QEMUARGS=-device rtl8139,vlan=0 -net user,id=net0,vlan=0 -net dump,vlan=0,file=/tmp/rustos-dump.pcap -d int,cpu_reset
 
 .PHONY: all
 all: boot.bin

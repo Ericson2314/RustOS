@@ -83,7 +83,7 @@ lazy_static_spin! {
 }
 
 #[no_mangle]
-pub extern "C" fn main(magic: u32, info: *mut multiboot_info) {
+pub extern "C" fn main(magic: u32, info: *mut multiboot_info) -> ! {
   unsafe {
     terminal::init_global();
     bump_ptr::set_allocator((15usize * 1024 * 1024) as *mut u8, (20usize * 1024 * 1024) as *mut u8);
@@ -100,11 +100,12 @@ pub extern "C" fn main(magic: u32, info: *mut multiboot_info) {
 
     debug!("{}", (*TEST.get_or_init())[0]);
 
-    cpu::CURRENT_CPU.get_or_init().lock().make_keyboard(put_char);
+    debug!("Setup GDT and IDT");
+    cpu::init();
 
-    cpu::CURRENT_CPU.get_or_init().lock().enable_interrupts();
+    cpu::enable_interrupts();
     debug!("Going to interrupt: ");
-    cpu::CURRENT_CPU.get_or_init().lock().test_interrupt();
+    cpu::test_interrupt();
     debug!("    back from interrupt!");
 
     //debug!("start scheduling...");
@@ -113,9 +114,7 @@ pub extern "C" fn main(magic: u32, info: *mut multiboot_info) {
     pci_stuff();
 
     info!("Kernel is done!");
-    loop {
-      cpu::CURRENT_CPU.get_or_init().lock().idle()
-    }
+    abort()
   }
 }
 
@@ -134,27 +133,21 @@ fn pci_stuff() {
 
 }
 
-#[no_mangle]
-pub extern "C" fn debug(s: &'static str, u: u32) {
-  debug!("{} 0x{:x}", s, u)
-}
+// Calls are generated to these
 
 #[no_mangle]
 pub extern "C" fn __morestack() {
-  loop { } //TODO(ryan) should I do anything here?
+  panic!("Called `__morestack`, wtf");
 }
 
 #[no_mangle]
 pub extern "C" fn abort() -> ! {
-  unsafe { core::intrinsics::abort(); }
+  unsafe {
+    cpu::disable_interrupts();
+    cpu::idle();
+    core::intrinsics::unreachable();
+  }
 }
-
-#[no_mangle]
-pub extern "C" fn callback() {
-  debug!("    in an interrupt!");
-}
-
-// TODO(ryan): figure out what to do with these:
 
 #[lang = "stack_exhausted"]
 extern fn stack_exhausted() {}

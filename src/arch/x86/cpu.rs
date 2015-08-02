@@ -1,7 +1,5 @@
 use core::prelude::*;
 
-use spin;
-
 use io::{self, Reader, Writer};
 
 use arch::idt::IDT;
@@ -9,10 +7,11 @@ use arch::gdt::GDT;
 
 use arch::keyboard::Keyboard;
 
-// TODO remove box hack. It says it has a global destructor but I don't know why
-lazy_static_spin! {
-  pub static CURRENT_CPU: spin::Mutex<CPU> = spin::Mutex::new(unsafe { CPU::new() });
-}
+static DEFAULT_KEYBOARD: Keyboard = Keyboard {
+  callback:     ::put_char,
+  control_port: Port(0x64),
+  data_port:    Port(0x60),
+};
 
 #[derive(Eq, PartialEq, Ord, PartialOrd, Copy, Clone)]
 pub enum IRQ { // after remap
@@ -34,85 +33,49 @@ pub enum IRQ { // after remap
   SecondaryAta = 0x2f
 }
 
-extern "C" {
+pub unsafe fn init() {
+  let mut gdt = GDT::new();
 
-  fn interrupt();
+  gdt.identity_map();
+  gdt.enable();
 
-  fn debug(s: &str, u: u32);
+  PIC::master().remap_to(0x20);
+  PIC::slave().remap_to(0x28);
 
+  let mut idt = IDT::new();
+
+  idt.enable();
 }
 
-#[allow(dead_code)]
-pub struct CPU {
-  gdt: GDT,
-  idt: IDT,
-  keyboard: Option<Keyboard>
-  //ports: Ports
+fn acknowledge_irq(_: u32) {
+  PIC::master().control_port.out_b(0x20); //TODO(ryan) ugly and only for master PIC
 }
 
-impl CPU {
+pub unsafe fn enable_interrupts() {
+  IDT::enable_interrupts();
+}
 
-  pub unsafe fn new() -> CPU {
-    let mut gdt = GDT::new();
+pub fn disable_interrupts() {
+  IDT::disable_interrupts();
+}
 
-    gdt.identity_map();
-    gdt.enable();
+pub unsafe fn test_interrupt() {
+  asm!("int 0x15" :::: "volatile", "intel");
+}
 
-    PIC::master().remap_to(0x20);
-    PIC::slave().remap_to(0x28);
-
-    let mut idt = IDT::new();
-
-    idt.enable();
-    CPU { gdt: gdt, idt: idt, keyboard: None}
-  }
-
-  pub fn handle(&mut self, interrupt_number: u32) {
-    match interrupt_number {
-      0x20 => (), // timer
-      0x21 => match &mut self.keyboard {
-        &mut Some(ref mut k) => k.got_interrupted(),
-        &mut None            => unsafe { debug("no keyboard installed", 0) }
-      },
-      _ => {debug!("interrupt with no handler: {}", interrupt_number); loop {};}
-    }
-    self.acknowledge_irq(interrupt_number);
-  }
-
-  pub unsafe fn register_irq(&mut self, irq: IRQ, handler: extern "C" fn () -> ()) {
-    self.idt.add_entry(irq as u32, handler);
-  }
-
-  pub unsafe fn idle(&mut self) {
-    asm!("hlt" ::::)
-  }
-
-  fn acknowledge_irq(&mut self, _: u32) {
-    PIC::master().control_port.out_b(0x20); //TODO(ryan) ugly and only for master PIC
-  }
-
-  pub fn make_keyboard(&mut self, callback: fn (u8) -> ()) {
-    self.keyboard = Some(Keyboard::new(callback, Port {port_number: 0x64}, Port {port_number: 0x60}));
-    //self.register_irq(Keyboard, )
-  }
-
-  pub unsafe fn enable_interrupts(&mut self) {
-    IDT::enable_interrupts();
-  }
-
-  pub fn disable_interrupts(&mut self) {
-    IDT::disable_interrupts();
-  }
-
-  pub unsafe fn test_interrupt(&mut self) {
-    interrupt();
-  }
-
+pub unsafe fn idle() {
+  asm!("hlt" ::::);
 }
 
 #[no_mangle]
 pub extern "C" fn unified_handler(interrupt_number: u32) {
-  CURRENT_CPU.get_or_init().lock().handle(interrupt_number);
+  match interrupt_number {
+    0x15 => debug!("Hi from test interrupt handler"),
+    0x20 => (), // timer
+    0x21 => DEFAULT_KEYBOARD.got_interrupted(),
+    _    => panic!("interrupt with no handler: {}", interrupt_number)
+  }
+  acknowledge_irq(interrupt_number);
 }
 
 #[no_mangle]
@@ -150,54 +113,52 @@ impl PIC {
 }
 
 #[derive(Eq, PartialEq, Ord, PartialOrd, Copy, Clone)]
-pub struct Port {
-  port_number: u16
-}
+pub struct Port(u16);
 
 impl Port {
 
   pub fn new(number: u16) -> Port {
-    Port { port_number: number }
+    Port(number)
   }
 
-  pub fn in_b(&mut self) -> u8 {
+  pub fn in_b(self) -> u8 {
     let mut ret: u8;
     unsafe {
-      asm!("inb $1, $0" : "={al}"(ret) :"{dx}"(self.port_number) ::)
+      asm!("inb $1, $0" : "={al}"(ret) :"{dx}"(self.0) ::)
     }
     return ret;
   }
 
-  pub fn out_b(&mut self, byte: u8) {
+  pub fn out_b(self, byte: u8) {
     unsafe {
-      asm!("outb $1, $0" :: "{dx}"(self.port_number), "{al}"(byte) ::)
+      asm!("outb $1, $0" :: "{dx}"(self.0), "{al}"(byte) ::)
     }
   }
 
-  pub fn out_w(&mut self, word: u16) {
+  pub fn out_w(self, word: u16) {
     unsafe {
-      asm!("outw $1, $0" ::"{dx}"(self.port_number), "{ax}"(word) ::)
+      asm!("outw $1, $0" ::"{dx}"(self.0), "{ax}"(word) ::)
     }
   }
 
-  pub fn in_w(&mut self) -> u16 {
+  pub fn in_w(self) -> u16 {
     let mut ret: u16;
     unsafe {
-      asm!("inw $1, $0" : "={ax}"(ret) :"{dx}"(self.port_number)::)
+      asm!("inw $1, $0" : "={ax}"(ret) :"{dx}"(self.0)::)
     }
     ret
   }
 
-  pub fn out_l(&mut self, long: u32) {
+  pub fn out_l(self, long: u32) {
     unsafe {
-      asm!("outl $1, $0" ::"{dx}"(self.port_number), "{eax}"(long) ::)
+      asm!("outl $1, $0" ::"{dx}"(self.0), "{eax}"(long) ::)
     }
   }
 
-  pub fn in_l(&mut self) -> u32 {
+  pub fn in_l(self) -> u32 {
     let mut ret: u32;
     unsafe {
-      asm!("inl $1, $0" : "={eax}"(ret) :"{dx}"(self.port_number)::)
+      asm!("inl $1, $0" : "={eax}"(ret) :"{dx}"(self.0)::)
     }
     ret
   }

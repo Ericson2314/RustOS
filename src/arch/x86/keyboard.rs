@@ -2,13 +2,13 @@ use core::prelude::*;
 
 use arch::cpu::Port;
 
-static KEY_CODE_TO_ASCII: &'static [u8] = b"??1234567890-=??qwertyuiop[]\n?asdfghjkl;'`?\\zxcvbnm,./?*? ?"; 
+static KEY_CODE_TO_ASCII: [u8; 59] = *b"??1234567890-=??qwertyuiop[]\n?asdfghjkl;'`?\\zxcvbnm,./?*? ?"; 
 
 #[derive(Copy, Clone)]
 pub struct Keyboard {
-  callback: fn (u8) -> (),
-  control_port: Port,
-  data_port: Port
+  pub callback:     fn (u8),
+  pub control_port: Port,
+  pub data_port:    Port
 }
 
 bitflags! {
@@ -25,14 +25,6 @@ bitflags! {
 }
 
 impl Keyboard {
-
-  pub fn new(callback: fn (u8) -> (), control_port: Port, data_port: Port) -> Keyboard {
-    Keyboard { callback: callback, control_port: control_port, data_port: data_port }
-  }
-  
-  pub fn register_callback(&mut self, callback: fn (u8) -> ()) {
-    self.callback = callback;
-  }
   
   #[allow(dead_code)]
   fn get_status(&mut self) -> Status {
@@ -45,13 +37,10 @@ impl Keyboard {
     control_port.write_u8(command);
   }*/
   
-  pub fn got_interrupted(&mut self) {
+  pub fn got_interrupted(&self) {
     let keycode = self.data_port.in_b();
     match KEY_CODE_TO_ASCII.get(keycode as usize) {
-      Some(ascii) => {
-	let func = self.callback;
-	func(*ascii);
-      },
+      Some(ascii) => (self.callback)(*ascii),
       None => ()
     }
   }
