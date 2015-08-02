@@ -101,7 +101,7 @@ pub extern "C" fn main(magic: u32, info: *mut multiboot_info) -> ! {
     debug!("Going to test lazy_static:");
     debug!("{}", (*TEST.get_or_init())[0]);
 
-    debug!("Setup GDT and IDT");
+    debug!("Going to set up CPU:");
     arch::cpu::init();
 
     cpu::enable_interrupts();

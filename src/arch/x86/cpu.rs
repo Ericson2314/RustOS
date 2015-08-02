@@ -32,7 +32,7 @@ pub enum IRQ { // after remap
   PsMouse      = 0x2c,
   FPU          = 0x2d,
   PrimaryAta   = 0x2e,
-  SecondaryAta = 0x2f
+  SecondaryAta = 0x2f,
 }
 
 
