@@ -3,7 +3,6 @@ pub use self::imp::{
   context,
   cpu,
   idt,
-  gdt,
   keyboard,
 };
 
@@ -14,6 +13,5 @@ mod imp {
   pub mod context;
   pub mod cpu;
   pub mod idt; // TODO shouldn't be pub
-  pub mod gdt; // TODO shouldn't be pub
   pub mod keyboard;
 }

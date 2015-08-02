@@ -9,22 +9,26 @@ crate-type = [ "staticlib" ]
 
 
 [dependencies.core]
-git = "https://github.com/RustOS-Fork-Holding-Ground/rust.git"
+git = "https://github.com/RustOS-Fork-Holding-Ground/rust"
 branch = "rustos"
 
 [dependencies.alloc]
-git = "https://github.com/RustOS-Fork-Holding-Ground/rust.git"
+git = "https://github.com/RustOS-Fork-Holding-Ground/rust"
 branch = "rustos"
 default-features = false
 features = [ "external_crate" ]
 
 [dependencies.collections]
-git = "https://github.com/RustOS-Fork-Holding-Ground/rust.git"
+git = "https://github.com/RustOS-Fork-Holding-Ground/rust"
 branch = "rustos"
 
 
 [dependencies.bitflags]
-git = "http://github.com/RustOS-Fork-Holding-Ground/bitflags.git"
+git = "http://github.com/RustOS-Fork-Holding-Ground/bitflags"
+branch = "rustos"
+
+[dependencies.cpu]
+git = "https://github.com/RustOS-Fork-Holding-Ground/libcpu"
 branch = "rustos"
 
 [dependencies.external]

@@ -26,6 +26,7 @@ extern crate collections;
 
 #[macro_use] #[no_link]
 extern crate bitflags;
+extern crate cpu;
 extern crate external as bump_ptr;
 #[macro_use]
 extern crate lazy_static_spin;
@@ -37,7 +38,6 @@ use collections::Vec;
 
 use ::io::Writer;
 use multiboot::multiboot_info;
-use arch::cpu;
 use pci::Pci;
 use driver::DriverManager;
 //use thread::scheduler;
@@ -98,15 +98,16 @@ pub extern "C" fn main(magic: u32, info: *mut multiboot_info) -> ! {
       (*info).multiboot_stuff();
     }
 
+    debug!("Going to test lazy_static:");
     debug!("{}", (*TEST.get_or_init())[0]);
 
     debug!("Setup GDT and IDT");
-    cpu::init();
+    arch::cpu::init();
 
     cpu::enable_interrupts();
     debug!("Going to interrupt: ");
-    cpu::test_interrupt();
-    debug!("    back from interrupt!");
+    arch::cpu::test_interrupt();
+    debug!("Back from interrupt!");
 
     //debug!("start scheduling...");
     //scheduler::thread_stuff();
@@ -144,7 +145,7 @@ pub extern "C" fn __morestack() {
 pub extern "C" fn abort() -> ! {
   unsafe {
     cpu::disable_interrupts();
-    cpu::idle();
+    cpu::halt();
     core::intrinsics::unreachable();
   }
 }

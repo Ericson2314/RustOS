@@ -3,9 +3,11 @@ use core::prelude::*;
 use io::{self, Reader, Writer};
 
 use arch::idt::IDT;
-use arch::gdt::GDT;
+pub use cpu::*;
 
 use arch::keyboard::Keyboard;
+
+
 
 static DEFAULT_KEYBOARD: Keyboard = Keyboard {
   callback:     ::put_char,
@@ -33,11 +35,20 @@ pub enum IRQ { // after remap
   SecondaryAta = 0x2f
 }
 
-pub unsafe fn init() {
-  let mut gdt = GDT::new();
 
-  gdt.identity_map();
-  gdt.enable();
+
+pub unsafe fn init() {
+  set_gdt(GDT.get_or_init());
+
+  // Reload segment registers after lgdt
+  set_cs(SegmentSelector::new(1, PrivilegeLevel::Ring0));
+
+  let ds = SegmentSelector::new(2, PrivilegeLevel::Ring0);
+  set_ds(ds);
+  set_es(ds);
+  set_fs(ds);
+  set_gs(ds);
+  set_ss(ds);
 
   PIC::master().remap_to(0x20);
   PIC::slave().remap_to(0x28);
@@ -51,20 +62,8 @@ fn acknowledge_irq(_: u32) {
   PIC::master().control_port.out8(0x20); //TODO(ryan) ugly and only for master PIC
 }
 
-pub unsafe fn enable_interrupts() {
-  IDT::enable_interrupts();
-}
-
-pub fn disable_interrupts() {
-  IDT::disable_interrupts();
-}
-
 pub unsafe fn test_interrupt() {
   asm!("int 0x15" :::: "volatile", "intel");
-}
-
-pub unsafe fn idle() {
-  asm!("hlt" ::::);
 }
 
 #[no_mangle]
@@ -82,6 +81,25 @@ pub extern "C" fn unified_handler(interrupt_number: u32) {
 pub extern "C" fn add_entry(idt: &mut IDT, index: u32, f: unsafe extern "C" fn() -> ()) {
   idt.add_entry(index, f);
 }
+
+// TODO should be real statics
+lazy_static_spin! {
+
+  static GDT: [GdtEntry; 3] = {[
+    GdtEntry::NULL,
+    GdtEntry::new(0 as *const (),
+                  0xFFFFFFFF,
+                  GdtAccess::Executable | GdtAccess::NotTss,
+                  PrivilegeLevel::Ring0),
+    GdtEntry::new(0 as *const (),
+                  0xFFFFFFFF,
+                  GdtAccess::Writable | GdtAccess::NotTss,
+                  PrivilegeLevel::Ring0),
+    //gdt.add_entry( = {.base=&myTss, .limit=sizeof(myTss), .type=0x89}; // You can use LTR(0x18)
+  ]};
+
+}
+
 
 
 struct PIC {
@@ -112,55 +130,39 @@ impl PIC {
 
 }
 
-#[derive(Eq, PartialEq, Ord, PartialOrd, Copy, Clone)]
+
+
+#[derive(Eq, PartialEq, Ord, PartialOrd, Copy, Clone, Debug)]
 pub struct Port(u16);
 
 impl Port {
 
-  pub fn new(number: u16) -> Port {
+  pub const fn new(number: u16) -> Port {
     Port(number)
   }
 
   pub fn in8(self) -> u8 {
-    let mut ret: u8;
-    unsafe {
-      asm!("inb $1, $0" : "={al}"(ret) :"{dx}"(self.0) ::)
-    }
-    return ret;
+    unsafe { ::cpu::in8(self.0) }
   }
 
-  pub fn out8(self, byte: u8) {
-    unsafe {
-      asm!("outb $1, $0" :: "{dx}"(self.0), "{al}"(byte) ::)
-    }
-  }
-
-  pub fn out16(self, word: u16) {
-    unsafe {
-      asm!("outw $1, $0" ::"{dx}"(self.0), "{ax}"(word) ::)
-    }
+  pub fn out8(self, num: u8) {
+    unsafe { ::cpu::out8(self.0, num) }
   }
 
   pub fn in16(self) -> u16 {
-    let mut ret: u16;
-    unsafe {
-      asm!("inw $1, $0" : "={ax}"(ret) :"{dx}"(self.0)::)
-    }
-    ret
+    unsafe { ::cpu::in16(self.0) }
   }
 
-  pub fn out32(self, long: u32) {
-    unsafe {
-      asm!("outl $1, $0" ::"{dx}"(self.0), "{eax}"(long) ::)
-    }
+  pub fn out16(self, num: u16) {
+    unsafe { ::cpu::out16(self.0, num) }
   }
 
   pub fn in32(self) -> u32 {
-    let mut ret: u32;
-    unsafe {
-      asm!("inl $1, $0" : "={eax}"(ret) :"{dx}"(self.0)::)
-    }
-    ret
+    unsafe { ::cpu::in32(self.0) }
+  }
+
+  pub fn out32(self, num: u32) {
+    unsafe { ::cpu::out32(self.0, num) }
   }
 
   pub fn io_wait() {
