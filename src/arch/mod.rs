@@ -2,7 +2,6 @@ pub use self::imp::{
   vga,
   context,
   cpu,
-  idt,
   keyboard,
 };
 
@@ -12,6 +11,5 @@ mod imp {
   pub mod vga;
   pub mod context;
   pub mod cpu;
-  pub mod idt; // TODO shouldn't be pub
   pub mod keyboard;
 }
