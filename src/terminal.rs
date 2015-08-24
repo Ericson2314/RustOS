@@ -1,6 +1,7 @@
 use core::prelude::*;
 
 use spin;
+use void::{Void, ResultVoidExt};
 
 use arch::vga;
 
@@ -78,14 +79,19 @@ pub fn init_global() {
   guard.clear_screen();
 }
 
-impl ::io::Writer for Terminal
+impl ::io::Write for Terminal
 {
-  type Err = ();
+  type Err = Void;
 
-  fn write(&mut self, buf: &[u8]) -> Result<usize, ()> {
+  fn write(&mut self, buf: &[u8]) -> Result<usize, Void> {
     for &c in buf.iter() {
       self.put_char(c);
     }
     Ok(buf.len())
+  }
+
+  fn write_all<E>(&mut self, buf: &[u8]) -> Result<(), E> {
+    self.write(buf).void_unwrap();
+    Ok(())
   }
 }

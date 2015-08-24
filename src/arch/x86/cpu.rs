@@ -1,6 +1,8 @@
 use core::prelude::*;
 
-use io::{self, Reader, Writer};
+use void::Void;
+
+use io::{self, Read, Write};
 
 pub use cpu::*;
 
@@ -466,40 +468,46 @@ impl Port {
 
 }
 
-impl io::Reader for Port
+impl io::Read for Port
 {
-  type Err = (); // TODO use bottom type
+  type Err = Void;
 
-  //fn read_u8(&mut self) -> Result<u8, ()> {
-  //  Ok(self.in8())
-  //}
+  fn read(&mut self, buf: &mut [u8]) -> Result<usize, Void> {
+    Ok(match &mut *buf {
+      []               => 0,
+      [ref mut a, _..] => {
+        *a = self.in8();
+        1
+      }
+    })
+  }
 
-  fn read(&mut self, buf: &mut [u8]) -> Result<usize, ()> {
+  fn read_all<E>(&mut self, buf: &mut [u8]) -> Result<(), E> {
     for el in buf.iter_mut() {
       *el = self.in8();
     }
-    Ok(buf.len())
+    Ok(())
   }
-
 }
 
-impl io::Writer for Port
+impl io::Write for Port
 {
-  type Err = (); // TODO use bottom type
+  type Err = Void;
 
-  //fn write_u8(&mut self, byte: u8) -> Result<(), ()> {
-  //  self.out8(byte);
-  //  Ok(())
-  //}
-
-  fn write(&mut self, buf: &[u8]) -> Result<usize, ()> {
-    for &byte in buf.iter() {
-      self.out8(byte);
-    }
-    Ok(buf.len())
+  fn write(&mut self, buf: &[u8]) -> Result<usize, Void> {
+    Ok(match buf {
+      []       => 0,
+      [a, _..] => {
+        self.out8(a);
+        1
+      }
+    })
   }
 
-  fn flush(&mut self) -> Result<(), ()> {
+  fn write_all<E>(&mut self, buf: &[u8]) -> Result<(), E> {
+    for el in buf.iter() {
+      self.out8(*el);
+    }
     Ok(())
   }
 }

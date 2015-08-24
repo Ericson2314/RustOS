@@ -6,6 +6,8 @@ use collections::Vec;
 
 use io::*;
 
+use void::*;
+
 pub trait Driver {
 
   fn init(&mut self);
@@ -18,34 +20,25 @@ pub trait DriverManager {
 
 }
 
-pub trait NetworkDriver: Driver {
-
+pub trait NetworkDriver: Driver
+{
   fn address(&mut self) -> [u8; 6];
 
-  fn put_frame(&mut self, buf: &[u8]) -> Result<usize, ()>;
+  fn put_frame(&mut self, buf: &[u8]) -> Result<usize, Void>;
   // TODO(ryan): more
 }
 
-impl<T> Writer for T where T: NetworkDriver
-{
-  type Err = ();
-
-  fn write(&mut self, buf: &[u8]) -> Result<usize, ()> {
-    match self.put_frame(buf) {
-      Ok(_)  => Ok(buf.len()),
-      Err(_) => Err(())
-    }
-  }
+pub fn adap_ref<T: NetworkDriver + ?Sized>(t: &mut T) -> &mut Adaptor<T> {
+  unsafe { ::std::mem::transmute(t) }
 }
 
-impl<'a> Writer for NetworkDriver + 'a
-{
-  type Err = ();
+pub struct Adaptor<T: NetworkDriver + ?Sized>(T);
 
-  fn write(&mut self, buf: &[u8]) -> Result<usize, ()> {
-    match self.put_frame(buf) {
-      Ok(_)  => Ok(buf.len()),
-      Err(_) => Err(())
-    }
+impl<T: NetworkDriver + ?Sized> Write for Adaptor<T>
+{
+  type Err = Void;
+
+  fn write(&mut self, buf: &[u8]) -> Result<usize, Void> {
+    self.0.put_frame(buf)
   }
 }

@@ -7,6 +7,7 @@
 #![feature(lang_items)]
 #![feature(box_syntax)]
 #![feature(associated_consts)]
+#![feature(slice_patterns)]
 #![feature(const_fn)]
 #![feature(core_prelude)]
 #![feature(core_intrinsics)]
@@ -21,8 +22,10 @@ extern crate rlibc;
 #[macro_use]
 //extern crate std; // for useful macros and IO interfaces
 extern crate core;
+extern crate coreio as io;
 extern crate alloc;
 extern crate collections;
+extern crate void;
 
 #[macro_use] #[no_link]
 extern crate bitflags;
@@ -36,7 +39,6 @@ use core::prelude::*;
 
 use collections::Vec;
 
-use ::io::Writer;
 use multiboot::multiboot_info;
 use pci::Pci;
 use driver::DriverManager;
@@ -53,8 +55,6 @@ mod pci;
 mod rtl8139;
 mod driver;
 mod net;
-
-mod io;
 
 
 fn test_allocator() {

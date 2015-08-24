@@ -3,6 +3,8 @@ use core::prelude::*;
 //use std::io::IoResult;
 use core::mem::transmute;
 
+use void::*;
+
 use arch::cpu::Port;
 use driver::{Driver, NetworkDriver};
 use pci::{PciManifest, PortGranter};
@@ -60,7 +62,7 @@ impl Driver for Rtl8139 {
 
 impl NetworkDriver for Rtl8139
 {
-  fn put_frame(&mut self, buf: &[u8]) -> Result<usize, ()> {
+  fn put_frame(&mut self, buf: &[u8]) -> Result<usize, Void> {
     let slice_bytes: ::core::raw::Slice<u8> = unsafe { transmute(buf) };
 
     trace!("sending {} bytes", slice_bytes.len);

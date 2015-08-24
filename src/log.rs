@@ -1,9 +1,11 @@
+use core::prelude::*;
 use core::fmt::Arguments;
-use io::Writer;
+use io::{EndOfFile, Write};
 
 pub fn write(args: Arguments) {
   // Arguments are already evaluated, so dead-lock is avoided
-  ::terminal::GLOBAL.lock().write_fmt(args).ok();
+  let r: Result<(), EndOfFile> = ::terminal::GLOBAL.lock().write_fmt(args);
+  drop(r)
 }
 
 //#[macro_export]

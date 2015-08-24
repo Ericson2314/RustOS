@@ -3,9 +3,9 @@ use core::mem::{size_of, transmute};
 
 use alloc::boxed::Box;
 
-use driver::NetworkDriver;
+use driver::*;
 
-use io::Writer;
+use io::*;
 
 pub struct NetworkStack {
   card: Box<NetworkDriver + 'static>
@@ -17,11 +17,12 @@ impl NetworkStack {
     NetworkStack { card: card }
   }
 
-  pub fn test(&mut self) -> Result<(), ()> {
+  pub fn test(&mut self) -> Result<(), EndOfFile> {
     let address = self.card.address();
     
     for i in (0..10usize) {
-      write!(&mut self.card, "\nhello, etherworld! sending frame # {} !\n", i).ok().unwrap();
+      try!(write!(adap_ref(&mut*self.card),
+                  "\nhello, etherworld! sending frame # {} !\n", i));
     }
 
     let source = address;
@@ -34,7 +35,7 @@ impl NetworkStack {
 
     let to_send = &(header, i_header, u_header, raw);
 
-    self.card.write(unsafe { transmute ((to_send, size_of::<(EthernetHeader, IpHeader, UdpHeader)>() + raw.len())) }).ok();
+    adap_ref(&mut*self.card).write(unsafe { transmute ((to_send, size_of::<(EthernetHeader, IpHeader, UdpHeader)>() + raw.len())) }).ok();
     Ok(())
   }
 

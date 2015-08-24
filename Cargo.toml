@@ -27,6 +27,10 @@ branch = "rustos"
 git = "http://github.com/RustOS-Fork-Holding-Ground/bitflags"
 branch = "rustos"
 
+[dependencies.coreio]
+git = "https://github.com/RustOS-Fork-Holding-Ground/coreio"
+branch = "rustos"
+
 [dependencies.cpu]
 git = "https://github.com/RustOS-Fork-Holding-Ground/libcpu"
 branch = "rustos"
@@ -44,4 +48,8 @@ branch = "rustos"
 
 [dependencies.rlibc]
 rlibc = "https://github.com/RustOS-Fork-Holding-Ground/rlibc"
+branch = "rustos"
+
+[dependencies.void]
+git = "https://github.com/RustOS-Fork-Holding-Ground/rust-void"
 branch = "rustos"
