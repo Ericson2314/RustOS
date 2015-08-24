@@ -142,6 +142,12 @@ pub extern "C" fn __morestack() {
 }
 
 #[no_mangle]
+#[allow(non_snake_case)]
+pub extern "C" fn _Unwind_Resume() {
+  panic!("Called `_Unwind_Resume`, wtf");
+}
+
+#[no_mangle]
 pub extern "C" fn abort() -> ! {
   unsafe {
     cpu::disable_interrupts();
