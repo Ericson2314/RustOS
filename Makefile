@@ -24,36 +24,29 @@ vb: boot.iso
 
 
 .PHONY: target/$(TARGET)/debug/librustos*.a
-target/$(TARGET)/debug/librustos*.a: Cargo.toml libmorestack.a libcompiler-rt.a lib_context.a
+target/$(TARGET)/debug/librustos*.a: Cargo.toml
 	cargo build --target $(TARGET) --verbose
 
-boot.bin: src/arch/x86/link.ld boot.o target/$(TARGET)/debug/librustos*.a context.o
+boot.bin: src/arch/x86/link.ld \
+		target/$(TARGET)/debug/deps/boot.o \
+		target/$(TARGET)/debug/librustos*.a \
+		target/$(TARGET)/debug/deps/context.o \
+		target/$(TARGET)/debug/deps/_context.o
 	$(LD) --gc-sections -o $@ -T $^
 
 boot.iso: boot.bin
 	cp boot.bin src/isodir/boot/
 	grub-mkrescue -o boot.iso src/isodir
 
-compiler-rt.o: src/dummy-compiler-rt.s # needed for staticlib creation
-	$(AS)  -o $@ $<
+target/$(TARGET)/debug/deps/:
+	mkdir -p $@
 
-%.s: ../rust/src/rt/arch/i386/%.S
+target/$(TARGET)/debug/deps/%.s: ../rust/src/rt/arch/i386/%.S target/$(TARGET)/debug/deps/
 	$(CPP) -o $@ $<
 
-%.o: src/arch/x86/%.s
+target/$(TARGET)/debug/deps/%.o: src/arch/x86/%.s target/$(TARGET)/debug/deps/
 	$(AS)  -o $@ $<
-
-%.o: src/%.s
-	$(AS)  -o $@ $<
-
-lib%.a: %.o
-	ar rcs $@ $<
 
 .PHONY: clean
-clean: cleanproj
+clean:
 	cargo clean
-
-.PHONY: cleanproj
-cleanproj:
-	cargo clean -p rustos
-	rm -f *.bin *.img *.iso *.rlib *.a *.so *.o *.s
