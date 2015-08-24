@@ -45,14 +45,14 @@ impl Rtl8139 { // TODO(ryan): is there already a frame oriented interface in std
 impl Driver for Rtl8139 {
 
   fn init(&mut self) {
-    self.config_1.out_b(0x00);
+    self.config_1.out8(0x00);
 
-    self.command_register.out_b(0x10); // reset
-    while (self.command_register.in_b() & 0x10) != 0 { } // wait till back
+    self.command_register.out8(0x10); // reset
+    while (self.command_register.in8() & 0x10) != 0 { } // wait till back
 
 
-    self.command_register.out_b(0x0C); // enable transmit
-    while (self.command_register.in_b() & 0x0c) != 0x0c {}
+    self.command_register.out8(0x0C); // enable transmit
+    while (self.command_register.in8() & 0x0c) != 0x0c {}
 
   }
 
@@ -66,11 +66,11 @@ impl NetworkDriver for Rtl8139
     trace!("sending {} bytes", slice_bytes.len);
     
 
-    self.transmit_address[self.descriptor].out_l(slice_bytes.data as u32);
+    self.transmit_address[self.descriptor].out32(slice_bytes.data as u32);
 
-    self.transmit_status[self.descriptor].out_l(0xfff & (slice_bytes.len as u32));
+    self.transmit_status[self.descriptor].out32(0xfff & (slice_bytes.len as u32));
     
-    while (self.transmit_status[self.descriptor].in_l() & 0x8000) == 0 { } // TODO(ryan): this is fragile if error sending...
+    while (self.transmit_status[self.descriptor].in32() & 0x8000) == 0 { } // TODO(ryan): this is fragile if error sending...
     self.descriptor = (self.descriptor + 1) % 4;
     Ok(slice_bytes.len)
   }
@@ -78,7 +78,7 @@ impl NetworkDriver for Rtl8139
   fn address(&mut self) -> [u8; 6] {
     let mut ret = [0; 6];
     for i in 0..6usize {
-      ret[i] = self.id[i].in_b();
+      ret[i] = self.id[i].in8();
     }
     ret
   }

@@ -28,7 +28,7 @@ impl Keyboard {
   
   #[allow(dead_code)]
   fn get_status(&mut self) -> Status {
-    Status::from_bits(self.control_port.in_b()).unwrap()
+    Status::from_bits(self.control_port.in8()).unwrap()
   }
   
   /*
@@ -38,7 +38,7 @@ impl Keyboard {
   }*/
   
   pub fn got_interrupted(&self) {
-    let keycode = self.data_port.in_b();
+    let keycode = self.data_port.in8();
     match KEY_CODE_TO_ASCII.get(keycode as usize) {
       Some(ascii) => (self.callback)(*ascii),
       None => ()

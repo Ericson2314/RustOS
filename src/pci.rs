@@ -108,9 +108,9 @@ impl Pci {
 
   pub fn read(&mut self, bus: u8, device: u8, function: u8, offset: u8) -> Result<u32, ()> {
     let address = Pci::build_address(bus, device, function, offset);
-    self.address_port.out_l(address);
+    self.address_port.out32(address);
     //Port::io_wait();
-    let input = self.data_port.in_l();
+    let input = self.data_port.in32();
     Ok(input)
   }
 
@@ -179,8 +179,8 @@ impl DriverManager for Pci {
                 }
                 if (shared.vendor == 0x10ec) && (shared.device == 0x8139) {
                   io_offset = (next.base_addresses[0] >> 2) << 2;
-                  self.address_port.out_l(Pci::build_address(bus as u8, device as u8, 0, 4));
-                  self.data_port.out_w(shared.command | 0x4);
+                  self.address_port.out32(Pci::build_address(bus as u8, device as u8, 0, 4));
+                  self.data_port.out16(shared.command | 0x4);
                   debug!("command after bus mastering is 0x{:x}",
                          self.read_header(bus as u8, device as u8).unwrap().shared.command);
                 }

@@ -48,7 +48,7 @@ pub unsafe fn init() {
 }
 
 fn acknowledge_irq(_: u32) {
-  PIC::master().control_port.out_b(0x20); //TODO(ryan) ugly and only for master PIC
+  PIC::master().control_port.out8(0x20); //TODO(ryan) ugly and only for master PIC
 }
 
 pub unsafe fn enable_interrupts() {
@@ -106,7 +106,7 @@ impl PIC {
     let enable_all = 0x00;
     let typ = if self.is_master { 0x2 } else { 0x4 };
 
-    self.control_port.out_b(icw1);
+    self.control_port.out8(icw1);
     self.mask_port.write(&[start, typ, icw4, enable_all]).ok();
   }
 
@@ -121,7 +121,7 @@ impl Port {
     Port(number)
   }
 
-  pub fn in_b(self) -> u8 {
+  pub fn in8(self) -> u8 {
     let mut ret: u8;
     unsafe {
       asm!("inb $1, $0" : "={al}"(ret) :"{dx}"(self.0) ::)
@@ -129,19 +129,19 @@ impl Port {
     return ret;
   }
 
-  pub fn out_b(self, byte: u8) {
+  pub fn out8(self, byte: u8) {
     unsafe {
       asm!("outb $1, $0" :: "{dx}"(self.0), "{al}"(byte) ::)
     }
   }
 
-  pub fn out_w(self, word: u16) {
+  pub fn out16(self, word: u16) {
     unsafe {
       asm!("outw $1, $0" ::"{dx}"(self.0), "{ax}"(word) ::)
     }
   }
 
-  pub fn in_w(self) -> u16 {
+  pub fn in16(self) -> u16 {
     let mut ret: u16;
     unsafe {
       asm!("inw $1, $0" : "={ax}"(ret) :"{dx}"(self.0)::)
@@ -149,13 +149,13 @@ impl Port {
     ret
   }
 
-  pub fn out_l(self, long: u32) {
+  pub fn out32(self, long: u32) {
     unsafe {
       asm!("outl $1, $0" ::"{dx}"(self.0), "{eax}"(long) ::)
     }
   }
 
-  pub fn in_l(self) -> u32 {
+  pub fn in32(self) -> u32 {
     let mut ret: u32;
     unsafe {
       asm!("inl $1, $0" : "={eax}"(ret) :"{dx}"(self.0)::)
@@ -164,7 +164,7 @@ impl Port {
   }
 
   pub fn io_wait() {
-    Port::new(0x80).out_b(0);
+    Port::new(0x80).out8(0);
   }
 
 }
@@ -174,12 +174,12 @@ impl io::Reader for Port
   type Err = (); // TODO use bottom type
 
   //fn read_u8(&mut self) -> Result<u8, ()> {
-  //  Ok(self.in_b())
+  //  Ok(self.in8())
   //}
 
   fn read(&mut self, buf: &mut [u8]) -> Result<usize, ()> {
     for el in buf.iter_mut() {
-      *el = self.in_b();
+      *el = self.in8();
     }
     Ok(buf.len())
   }
@@ -191,13 +191,13 @@ impl io::Writer for Port
   type Err = (); // TODO use bottom type
 
   //fn write_u8(&mut self, byte: u8) -> Result<(), ()> {
-  //  self.out_b(byte);
+  //  self.out8(byte);
   //  Ok(())
   //}
 
   fn write(&mut self, buf: &[u8]) -> Result<usize, ()> {
     for &byte in buf.iter() {
-      self.out_b(byte);
+      self.out8(byte);
     }
     Ok(buf.len())
   }
