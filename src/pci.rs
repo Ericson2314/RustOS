@@ -1,4 +1,3 @@
-use core::prelude::*;
 //use std::io::IoResult;
 use core::mem::{transmute, size_of};
 

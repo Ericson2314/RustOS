@@ -10,7 +10,6 @@
 #![feature(associated_consts)]
 #![feature(slice_patterns)]
 #![feature(const_fn)]
-#![feature(core_prelude)]
 #![feature(core_intrinsics)]
 #![feature(raw)]
 
@@ -21,8 +20,6 @@
 // not directly used, but needed to link to llvm emitted calls
 extern crate rlibc;
 
-#[macro_use]
-extern crate core;
 extern crate coreio as io;
 extern crate alloc;
 extern crate collections;
@@ -31,12 +28,10 @@ extern crate void;
 #[macro_use] #[no_link]
 extern crate bitflags;
 extern crate cpu;
-extern crate external as bump_ptr;
+extern crate bump_pointer;
 #[macro_use]
 extern crate lazy_static_spin;
 extern crate spin;
-
-use core::prelude::*;
 
 use collections::Vec;
 
@@ -87,7 +82,7 @@ lazy_static_spin! {
 pub extern "C" fn main(magic: u32, info: *mut multiboot_info) -> ! {
   // some preliminaries
   terminal::init_global();
-  bump_ptr::set_allocator((15usize * 1024 * 1024) as *mut u8, (20usize * 1024 * 1024) as *mut u8);
+  bump_pointer::set_allocator((15usize * 1024 * 1024) as *mut u8, (20usize * 1024 * 1024) as *mut u8);
   debug!("kernel start!");
   unsafe { panic::init() };
   debug!("Going to set up CPU:");

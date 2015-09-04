@@ -1,5 +1,3 @@
-use core::prelude::*;
-
 use alloc::boxed::Box;
 
 use collections::Vec;

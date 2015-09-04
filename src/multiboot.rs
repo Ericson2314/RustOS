@@ -1,7 +1,6 @@
 #![allow(dead_code)]
 #![allow(non_camel_case_types)]
 
-use core::prelude::*;
 use core::mem::transmute;
 
 // adapted from multiboot.h

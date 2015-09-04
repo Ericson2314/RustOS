@@ -185,14 +185,14 @@ struct Registers {
 
 #[cfg(all(windows, target_arch = "x86_64"))]
 fn new_regs() -> Box<Registers> {
-  box() Registers {
+  box Registers {
     gpr:[0,..14],
     _xmm:[simd::u32x4(0,0,0,0),..10]
   }
 }
 #[cfg(all(not(windows), target_arch = "x86_64"))]
 fn new_regs() -> Box<Registers> {
-  box() Registers {
+  box Registers {
     gpr:[0,..10],
     _xmm:[simd::u32x4(0,0,0,0),..6]
   }

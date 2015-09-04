@@ -1,5 +1,3 @@
-use core::prelude::*;
-
 use spin;
 use void::{Void, ResultVoidExt};
 

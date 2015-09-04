@@ -1,9 +1,6 @@
-#![feature(no_std, core, core_prelude)]
+#![feature(no_std, allocator)]
 #![no_std]
-
-extern crate core;
-
-use core::prelude::*;
+#![allocator]
 
 extern "C" {
   fn memmove(dest: *mut u8, src: *mut u8, count: u32);
@@ -93,7 +90,8 @@ impl Allocator for BumpPointer
   }
 }
 
-pub fn allocate(size: usize, align: usize) -> *mut u8 {
+#[no_mangle]
+pub extern "C" fn __rust_allocate(size: usize, align: usize) -> *mut u8 {
   unsafe {
     match allocator.allocate(size, align) {
     Some(ptr) => ptr,
@@ -102,13 +100,16 @@ pub fn allocate(size: usize, align: usize) -> *mut u8 {
   }
 }
 
-pub fn deallocate(ptr: *mut u8, old_size: usize, align: usize) {
+#[no_mangle]
+pub extern "C" fn __rust_deallocate(ptr: *mut u8, old_size: usize,
+                                    align: usize) {
   unsafe {
     allocator.deallocate(ptr, old_size, align)
   }
 }
 
-pub fn reallocate(ptr: *mut u8, old_size: usize, size: usize,
+#[no_mangle]
+pub extern "C" fn __rust_reallocate(ptr: *mut u8, old_size: usize, size: usize,
                               align: usize) -> *mut u8 {
   unsafe {
     match allocator.reallocate(ptr, old_size, size, align) {
@@ -118,17 +119,17 @@ pub fn reallocate(ptr: *mut u8, old_size: usize, size: usize,
   }
 }
 
-pub fn reallocate_inplace(ptr: *mut u8, old_size: usize, size: usize,
-                                      align: usize) -> usize {
+#[no_mangle]
+pub extern "C" fn __rust_reallocate_inplace(ptr: *mut u8, old_size: usize,
+                                            size: usize, align: usize) -> usize {
   unsafe {
     allocator.reallocate_inplace(ptr, old_size, size, align)
   }
 }
 
-pub fn usable_size(size: usize, align: usize) -> usize {
+#[no_mangle]
+pub extern "C" fn __rust_usable_size(size: usize, align: usize) -> usize {
   unsafe {
     allocator.usable_size(size, align)
   }
 }
-
-pub fn stats_print() {}

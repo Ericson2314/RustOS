@@ -1,4 +1,3 @@
-use core::prelude::*;
 use io::EndOfFile;
 
 use terminal;

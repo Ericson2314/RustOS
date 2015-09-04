@@ -2,7 +2,7 @@
 
 # name is mandated by liballoc for now
 
-name = "external"
+name = "bump-pointer"
 version = "0.0.1"
 authors = [ "you@example.com" ]
 

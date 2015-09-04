@@ -1,5 +1,4 @@
 // An attempt at an rtl8139 ethernet card driver
-use core::prelude::*;
 //use std::io::IoResult;
 use core::mem::transmute;
 

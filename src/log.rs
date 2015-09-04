@@ -1,4 +1,3 @@
-use core::prelude::*;
 use core::fmt::Arguments;
 use io::{EndOfFile, Write};
 

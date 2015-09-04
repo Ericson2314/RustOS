@@ -15,8 +15,6 @@ branch = "rustos"
 [dependencies.alloc]
 git = "https://github.com/RustOS-Fork-Holding-Ground/rust"
 branch = "rustos"
-default-features = false
-features = [ "external_crate" ]
 
 [dependencies.collections]
 git = "https://github.com/RustOS-Fork-Holding-Ground/rust"
@@ -35,9 +33,6 @@ branch = "rustos"
 git = "https://github.com/RustOS-Fork-Holding-Ground/libcpu"
 branch = "rustos"
 
-[dependencies.external]
-path = "bump-pointer"
-
 [dependencies.lazy-static-spin]
 git = "https://github.com/RustOS-Fork-Holding-Ground/lazy-static-spin"
 branch = "rustos"
@@ -53,3 +48,7 @@ branch = "rustos"
 [dependencies.void]
 git = "https://github.com/RustOS-Fork-Holding-Ground/rust-void"
 branch = "rustos"
+
+
+[dependencies.bump-pointer]
+path = "bump-pointer"

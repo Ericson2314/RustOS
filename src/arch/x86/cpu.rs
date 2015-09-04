@@ -1,5 +1,3 @@
-use core::prelude::*;
-
 use void::Void;
 
 use io::{self, Read, Write};

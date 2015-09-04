@@ -1,7 +1,5 @@
 // TODO(ryan): it really looks like bulk of libgreen could be used here where pthread <-> core
 
-use core::prelude::*;
-use core::cell::UnsafeCell;
 use core::mem::{transmute, transmute_copy};
 use core::ptr;
 
@@ -98,7 +96,9 @@ impl Scheduler {
     unreachable!();
   }
 
-  fn do_and_unschedule<'a, F>(&mut self, mut do_something: F) where F : FnMut(Tcb) -> &'a mut Tcb {
+  fn do_and_unschedule<'a, F>(&mut self, do_something: F)
+    where F : FnOnce(Tcb) -> &'a mut Tcb + 'a
+  {
     debug!("unscheduling");
 
     unsafe { cpu::disable_interrupts() };
@@ -143,7 +143,7 @@ unsafe fn ends_mut<T>(ll: &mut LinkedList<T>) -> Option<(&mut T, &mut T)> {
   Some((transmute(b), f))
 }
 
-struct Mutex {
+pub struct Mutex {
   taken: bool,
   sleepers: LinkedList<Tcb>
 }
