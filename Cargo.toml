@@ -8,6 +8,8 @@ name = "rustos"
 crate-type = [ "staticlib" ]
 
 
+# Standard Library
+
 [dependencies.core]
 git = "https://github.com/RustOS-Fork-Holding-Ground/rust"
 branch = "rustos"
@@ -21,9 +23,22 @@ git = "https://github.com/RustOS-Fork-Holding-Ground/rust"
 branch = "rustos"
 
 
+# Official Rust-Lang
+
 [dependencies.bitflags]
 git = "http://github.com/RustOS-Fork-Holding-Ground/bitflags"
 branch = "rustos"
+
+[dependencies.log]
+git = "https://github.com/RustOS-Fork-Holding-Ground/log"
+branch = "rustos"
+
+[dependencies.rlibc]
+rlibc = "https://github.com/RustOS-Fork-Holding-Ground/rlibc"
+branch = "rustos"
+
+
+# Third-Party
 
 [dependencies.coreio]
 git = "https://github.com/RustOS-Fork-Holding-Ground/coreio"
@@ -41,14 +56,12 @@ branch = "rustos"
 git = "https://github.com/RustOS-Fork-Holding-Ground/spinlock-rs"
 branch = "rustos"
 
-[dependencies.rlibc]
-rlibc = "https://github.com/RustOS-Fork-Holding-Ground/rlibc"
-branch = "rustos"
-
 [dependencies.void]
 git = "https://github.com/RustOS-Fork-Holding-Ground/rust-void"
 branch = "rustos"
 
+
+# This Repo
 
 [dependencies.bump-pointer]
 path = "bump-pointer"

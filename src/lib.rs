@@ -16,6 +16,10 @@
 #![feature(core, alloc, collections)]
 #![feature(no_std)]
 
+#[macro_use] #[no_link]
+extern crate bitflags;
+#[macro_use]
+extern crate log;
 
 // not directly used, but needed to link to llvm emitted calls
 extern crate rlibc;
@@ -25,8 +29,6 @@ extern crate alloc;
 extern crate collections;
 extern crate void;
 
-#[macro_use] #[no_link]
-extern crate bitflags;
 extern crate cpu;
 extern crate bump_pointer;
 #[macro_use]
@@ -40,8 +42,13 @@ use pci::Pci;
 use driver::DriverManager;
 use thread::scheduler;
 
+pub use log_impl::{
+  global_log_enabled,
+  global_log_log,
+};
+
 #[macro_use]
-mod log;
+mod log_impl;
 pub mod arch;
 mod terminal;
 mod panic;
@@ -80,9 +87,12 @@ lazy_static_spin! {
 
 #[no_mangle]
 pub extern "C" fn main(magic: u32, info: *mut multiboot_info) -> ! {
+  log::set_max_log_level(log::LogLevelFilter::max());
+
   // some preliminaries
   terminal::init_global();
-  bump_pointer::set_allocator((15usize * 1024 * 1024) as *mut u8, (20usize * 1024 * 1024) as *mut u8);
+  bump_pointer::set_allocator((15usize * 1024 * 1024) as *mut u8,
+                              (20usize * 1024 * 1024) as *mut u8);
   debug!("kernel start!");
   unsafe { panic::init() };
   debug!("Going to set up CPU:");
