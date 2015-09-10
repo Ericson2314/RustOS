@@ -16,7 +16,7 @@ run: boot.bin
 .PHONY: debug
 debug: boot.bin
 	$(QEMU) $(QEMUARGS) -S -gdb tcp::3333 -kernel $< &
-	gdb $< -ex "target remote :3333" -ex "break _start" -ex "c"
+	termite -e 'gdb $< -ex "target remote :3333" -ex "break _start" -ex "c"'
 
 .PHONY: vb
 vb: boot.iso
