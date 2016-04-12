@@ -98,7 +98,7 @@ pub extern "C" fn main(magic: u32, info: *mut multiboot_info) -> ! {
   }
 
   debug!("kernel start!");
-  unsafe { panic::init() };
+  panic::init();
   debug!("Going to set up CPU:");
   unsafe { arch::cpu::init() };
 

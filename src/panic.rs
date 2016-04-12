@@ -12,6 +12,6 @@ pub extern fn panic_impl(msg: ::core::fmt::Arguments,
   ::abort()
 }
 
-pub unsafe fn init() {
+pub fn init() {
   terminal::GLOBAL.lock().clear_screen()
 }
