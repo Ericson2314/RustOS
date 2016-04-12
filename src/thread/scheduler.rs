@@ -200,11 +200,9 @@ fn inner_thread_test(arg: usize) {
 extern "C" fn test_thread() {
   debug!("in a test thread!");
   inner_thread_test(11);
-  unsafe {
-    let s = get_scheduler();
-    debug!("leaving test thread!");
-    s.lock().unschedule_current();
-  }
+  let s = get_scheduler();
+  debug!("leaving test thread!");
+  s.lock().unschedule_current();
 }
 
 pub fn thread_stuff() {

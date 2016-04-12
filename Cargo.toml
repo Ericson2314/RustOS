@@ -26,15 +26,16 @@ branch = "rustos"
 # Official Rust-Lang
 
 [dependencies.bitflags]
-git = "http://github.com/RustOS-Fork-Holding-Ground/bitflags"
+git = "https://github.com/RustOS-Fork-Holding-Ground/bitflags"
 branch = "rustos"
 
 [dependencies.log]
 git = "https://github.com/RustOS-Fork-Holding-Ground/log"
 branch = "rustos"
+default-features = false
 
 [dependencies.rlibc]
-rlibc = "https://github.com/RustOS-Fork-Holding-Ground/rlibc"
+git = "https://github.com/RustOS-Fork-Holding-Ground/rlibc"
 branch = "rustos"
 
 
@@ -59,6 +60,7 @@ branch = "rustos"
 [dependencies.void]
 git = "https://github.com/RustOS-Fork-Holding-Ground/rust-void"
 branch = "rustos"
+default-features = false
 
 
 # This Repo

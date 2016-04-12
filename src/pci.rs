@@ -118,7 +118,7 @@ impl Pci {
     assert_eq!(start_address % 4, 0);
 
     let mut v = Vec::new();
-    for i in (0_u16..size / 4) {
+    for i in 0_u16..(size / 4) {
       let (offset, function): (u8, u8) = unsafe { transmute((start_address + i*4) as u16) };
       v.push(self.read(bus, device, function, offset).unwrap());
     }

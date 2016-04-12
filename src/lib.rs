@@ -12,11 +12,14 @@
 #![feature(const_fn)]
 #![feature(core_intrinsics)]
 #![feature(raw)]
+#![feature(unsize)]
+#![feature(naked_functions)]
 
-#![feature(core, alloc, collections)]
-#![feature(no_std)]
+#![feature(alloc, collections)]
+extern crate alloc;
+extern crate collections;
 
-#[macro_use] #[no_link]
+#[macro_use]
 extern crate bitflags;
 #[macro_use]
 extern crate log;
@@ -25,8 +28,6 @@ extern crate log;
 extern crate rlibc;
 
 extern crate coreio as io;
-extern crate alloc;
-extern crate collections;
 extern crate void;
 
 extern crate cpu;
@@ -41,11 +42,6 @@ use multiboot::multiboot_info;
 use pci::Pci;
 use driver::DriverManager;
 use thread::scheduler;
-
-pub use log_impl::{
-  global_log_enabled,
-  global_log_log,
-};
 
 #[macro_use]
 mod log_impl;
@@ -87,7 +83,7 @@ lazy_static_spin! {
 
 #[no_mangle]
 pub extern "C" fn main(magic: u32, info: *mut multiboot_info) -> ! {
-  log::set_max_log_level(log::LogLevelFilter::max());
+  log_impl::init().unwrap();
 
   // some preliminaries
   terminal::init_global();
@@ -180,9 +176,6 @@ pub extern "C" fn abort() -> ! {
     core::intrinsics::unreachable();
   }
 }
-
-#[lang = "stack_exhausted"]
-extern fn stack_exhausted() {}
 
 #[lang = "eh_personality"]
 extern fn eh_personality() {}

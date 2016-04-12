@@ -4,17 +4,26 @@ use log::*;
 
 use io::{EndOfFile, Write};
 
-#[no_mangle]
-pub extern "C" fn global_log_enabled(_: &LogMetadata) -> bool {
-  true
+
+struct TerminalLogger;
+
+impl Log for TerminalLogger {
+  fn enabled(&self, _: &LogMetadata) -> bool { true }
+  fn log(&self, record: &LogRecord) {
+    let _ = write(format_args!("{}:{}: {}\n",
+                               record.level(),
+                               record.location().module_path(),
+                               record.args()));
+  }
 }
 
-#[no_mangle]
-pub extern "C" fn global_log_log(record: &LogRecord) {
-  let _ = write(format_args!("{}:{}: {}\n",
-                             record.level(),
-                             record.location().module_path(),
-                             record.args()));
+pub fn init() -> Result<(), SetLoggerError> {
+  unsafe {
+    set_logger_raw(|max_log_level| {
+      max_log_level.set(LogLevelFilter::max());
+      &TerminalLogger
+    })
+  }
 }
 
 pub fn write(args: Arguments) {

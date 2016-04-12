@@ -1,1 +1,1 @@
-(import <nixpkgs> {}).callPackage ./. {}
+(import <nixpkgs> {}).callPackage ./. { release = false; }

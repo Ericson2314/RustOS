@@ -19,9 +19,12 @@ impl NetworkStack {
   pub fn test(&mut self) -> Result<(), EndOfFile> {
     let address = self.card.address();
     
-    for i in (0..10usize) {
-      try!(write!(adap_ref(&mut*self.card),
-                  "\nhello, etherworld! sending frame # {} !\n", i));
+    for i in 0..10usize {
+      match write!(adap_ref(&mut*self.card),
+                   "\nhello, etherworld! sending frame # {} !\n", i) {
+        Ok(()) => (),
+        e @ Err(_) => return e,
+      }
     }
 
     let source = address;

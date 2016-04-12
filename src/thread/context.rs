@@ -10,7 +10,6 @@
 // option. This file may not be copied, modified, or distributed
 // except according to those terms.
 
-use core::prelude::*;
 use core::mem::{transmute, transmute_copy};
 use core::raw;
 #[cfg(target_arch = "x86_64")]

@@ -1,6 +1,6 @@
 use void::Void;
 
-use io::{self, Read, Write};
+use io::{self, Write};
 
 pub use cpu::*;
 
@@ -65,22 +65,22 @@ pub unsafe fn test_interrupt() {
 
 macro_rules! make_handler {
   ($num:expr, $name:ident, $body:expr) => {{
-    extern "C" {
-      fn $name ();
-    }
     fn body () {
       $body
     }
-    #[allow(dead_code)]
-    unsafe fn assembly () {
+    #[naked]
+    unsafe extern "C" fn $name () {
       asm!(concat!(
-        ".global ", stringify!($name), "\n\t",
-        stringify!($name), ":",        "\n\t",
+        "push esp",                    "\n\t",
+        "mov ebp, esp",                "\n\t",
         "pusha",                       "\n\t",
+
         "call  $0",                    "\n\t",
+
         "popa",                        "\n\t",
+        "leave",                       "\n\t",
         "iretd",                       "\n\t")
-           :: "s" (body) :: "volatile", "intel");
+           :: "s" (body as fn()) :: "volatile", "intel");
     }
     IdtEntry::new($name, PrivilegeLevel::Ring0, true)
   }};
