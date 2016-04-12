@@ -1,6 +1,5 @@
 pub use self::imp::{
   vga,
-  context,
   cpu,
   keyboard,
 };
@@ -9,7 +8,6 @@ pub use self::imp::{
 #[path="x86"]
 mod imp {
   pub mod vga;
-  pub mod context;
   pub mod cpu;
   pub mod keyboard;
 }

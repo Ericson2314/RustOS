@@ -29,9 +29,7 @@ target/$(TARGET)/debug/librustos*.a: Cargo.toml
 
 boot.bin: src/arch/x86/link.ld \
 		target/$(TARGET)/debug/deps/boot.o \
-		target/$(TARGET)/debug/librustos*.a \
-		target/$(TARGET)/debug/deps/context.o \
-		target/$(TARGET)/debug/deps/_context.o
+		target/$(TARGET)/debug/librustos*.a
 	$(LD) --gc-sections -o $@ -T $^
 
 boot.iso: boot.bin
@@ -40,9 +38,6 @@ boot.iso: boot.bin
 
 target/$(TARGET)/debug/deps/:
 	mkdir -p $@
-
-target/$(TARGET)/debug/deps/%.s: ../rust/src/rt/arch/i386/%.S target/$(TARGET)/debug/deps/
-	$(CPP) -o $@ $<
 
 target/$(TARGET)/debug/deps/%.o: src/arch/x86/%.s target/$(TARGET)/debug/deps/
 	$(AS)  -o $@ $<

@@ -23,25 +23,25 @@ extern crate collections;
 extern crate bitflags;
 #[macro_use]
 extern crate log;
-
 // not directly used, but needed to link to llvm emitted calls
 extern crate rlibc;
 
 extern crate coreio as io;
-extern crate void;
-
 extern crate cpu;
-extern crate bump_pointer;
+extern crate fringe;
 #[macro_use]
 extern crate lazy_static_spin;
 extern crate spin;
+extern crate void;
+
+extern crate bump_pointer;
 
 use collections::Vec;
 
 use multiboot::multiboot_info;
 use pci::Pci;
 use driver::DriverManager;
-use thread::scheduler;
+use sync::scheduler::{self, SchedulerCapabilityExt};
 
 #[macro_use]
 mod log_impl;
@@ -53,7 +53,7 @@ mod pci;
 mod rtl8139;
 mod driver;
 mod net;
-mod thread;
+mod sync;
 
 
 fn test_allocator() {
@@ -89,6 +89,14 @@ pub extern "C" fn main(magic: u32, info: *mut multiboot_info) -> ! {
   terminal::init_global();
   bump_pointer::set_allocator((15usize * 1024 * 1024) as *mut u8,
                               (20usize * 1024 * 1024) as *mut u8);
+
+  if magic != multiboot::MULTIBOOT_BOOTLOADER_MAGIC {
+    panic!("Multiboot magic is invalid");
+  } else {
+    debug!("Multiboot magic is valid. Info at 0x{:x}", info as u32);
+    unsafe { (*info).multiboot_stuff() };
+  }
+
   debug!("kernel start!");
   unsafe { panic::init() };
   debug!("Going to set up CPU:");
@@ -98,46 +106,34 @@ pub extern "C" fn main(magic: u32, info: *mut multiboot_info) -> ! {
   unsafe { cpu::enable_interrupts() };
 
   // we're going to now enter the scheduler to do the rest
-  let bootstrapped_thunk = move || {
-    bootstrapped_main(magic, info);
-  };
-
-  scheduler::get_scheduler().lock().schedule(box bootstrapped_thunk);
+  scheduler::lock_scheduler().spawn(sync::BoxStack::new(512),
+                                    bootstrapped_main);
   debug!("start scheduling...");
-  scheduler::get_scheduler().lock().bootstrap_start() // okay, scheduler, take it away!
+  scheduler::lock_scheduler().exit(fringe::NATIVE_THREAD_LOCALS) // okay, scheduler, take it away!
 }
 
-fn bootstrapped_main(magic: u32, info: *mut multiboot_info) {
-  unsafe {
-    debug!("Enable interrupts again");
-    cpu::enable_interrupts();
+fn bootstrapped_main<S>(tl: &mut fringe::ThreadLocals<S>) -> void::Void
+  where S: fringe::Stack + Send + 'static
+{
+  debug!("kernel main thread start!");
 
-    debug!("kernel main thread start!");
+  debug!("Testing allocator");
+  test_allocator();
 
-    debug!("Testing allocator");
-    test_allocator();
+  debug!("Going to test lazy_static:");
+  debug!("{}", (*TEST.get_or_init())[0]);
 
-    if magic != multiboot::MULTIBOOT_BOOTLOADER_MAGIC {
-      panic!("Multiboot magic is invalid");
-    } else {
-      debug!("Multiboot magic is valid. Info at 0x{:x}", info as u32);
-      (*info).multiboot_stuff();
-    }
+  debug!("Going to interrupt: ");
+  unsafe { arch::cpu::test_interrupt() };
+  debug!("Back from interrupt!");
 
-    debug!("Going to test lazy_static:");
-    debug!("{}", (*TEST.get_or_init())[0]);
+  pci_stuff();
 
-    debug!("Going to interrupt: ");
-    arch::cpu::test_interrupt();
-    debug!("Back from interrupt!");
+  debug!("Testing scheduler");
+  scheduler::thread_stuff(tl);
 
-    pci_stuff();
-
-    debug!("Testing scheduler");
-    scheduler::thread_stuff();
-
-    info!("Kernel main thread is done!");
-  }
+  info!("Kernel main thread is done!");
+  scheduler::lock_scheduler().exit(Some(tl))
 }
 
 fn pci_stuff() {

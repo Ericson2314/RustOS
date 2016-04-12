@@ -49,6 +49,11 @@ branch = "rustos"
 git = "https://github.com/RustOS-Fork-Holding-Ground/libcpu"
 branch = "rustos"
 
+[dependencies.fringe]
+git = "https://github.com/RustOS-Fork-Holding-Ground/libfringe"
+branch = "rustos"
+default-features = false
+
 [dependencies.lazy-static-spin]
 git = "https://github.com/RustOS-Fork-Holding-Ground/lazy-static-spin"
 branch = "rustos"
