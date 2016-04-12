@@ -7,34 +7,11 @@ pub use cpu::*;
 use arch::keyboard::Keyboard;
 
 
-
 static DEFAULT_KEYBOARD: Keyboard = Keyboard {
   callback:     ::put_char,
   control_port: Port(0x64),
   data_port:    Port(0x60),
 };
-
-#[derive(Eq, PartialEq, Ord, PartialOrd, Copy, Clone)]
-pub enum IRQ { // after remap
-  Timer        = 0x20,
-  PS2Keyboard  = 0x21,
-  Cascade      = 0x22,
-  COM2         = 0x23,
-  COM1         = 0x24,
-  LPT2         = 0x25,
-  Floppy       = 0x26,
-  LPT1         = 0x27,
-  CmosClock    = 0x28,
-  FreeOne      = 0x29,
-  FreeTwo      = 0x2a,
-  FreeThree    = 0x2b,
-  PsMouse      = 0x2c,
-  FPU          = 0x2d,
-  PrimaryAta   = 0x2e,
-  SecondaryAta = 0x2f,
-}
-
-
 
 pub unsafe fn init() {
   set_gdt(GDT.get_or_init());
