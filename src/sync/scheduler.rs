@@ -16,12 +16,12 @@ pub struct Scheduler {
 
 pub type SchedulerCapability<'a> = spin::MutexGuard<'a, Scheduler>;
 
-lazy_static_spin! {
-  static SCHEDULER: spin::Mutex<Scheduler> = spin::Mutex::new(Scheduler::new());
+lazy_static! {
+  static ref SCHEDULER: spin::Mutex<Scheduler> = spin::Mutex::new(Scheduler::new());
 }
 
 pub fn lock_scheduler() -> SchedulerCapability<'static> {
-  SCHEDULER.get_or_init().lock()
+  SCHEDULER.lock()
 }
 
 impl Scheduler {

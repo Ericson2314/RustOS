@@ -14,7 +14,7 @@ static DEFAULT_KEYBOARD: Keyboard = Keyboard {
 };
 
 pub unsafe fn init() {
-  set_gdt(GDT.get_or_init());
+  set_gdt(&*GDT);
 
   // Reload segment registers after lgdt
   set_cs(SegmentSelector::new(1, PrivilegeLevel::Ring0));
@@ -29,7 +29,7 @@ pub unsafe fn init() {
   PIC::master().remap_to(0x20);
   PIC::slave().remap_to(0x28);
 
-  set_idt(IDT.get_or_init());
+  set_idt(&*IDT);
 }
 
 fn acknowledge_irq(_: u32) {
@@ -74,9 +74,9 @@ macro_rules! make_handler {
 }
 
 // TODO should be real statics
-lazy_static_spin! {
+lazy_static! {
 
-  static GDT: [GdtEntry; 3] = {[
+  static ref GDT: [GdtEntry; 3] = {[
     GdtEntry::NULL,
     GdtEntry::new(0 as *const (),
                   0xFFFFFFFF,
@@ -89,7 +89,7 @@ lazy_static_spin! {
     //gdt.add_entry( = {.base=&myTss, .limit=sizeof(myTss), .type=0x89}; // You can use LTR(0x18)
   ]};
 
-  static IDT: [IdtEntry; 256] = {[
+  static ref IDT: [IdtEntry; 256] = {[
     make_handler!(0x00, interrupt_handler_0x00, EX, "Divide by zero"),
     make_handler!(0x01, interrupt_handler_0x01, EX, "Debug"),
     make_handler!(0x02, interrupt_handler_0x02, EX, "Non-maskable Interrupt"),

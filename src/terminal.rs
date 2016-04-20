@@ -10,6 +10,9 @@ pub static GLOBAL: spin::Mutex<Terminal> = spin::Mutex::new(Terminal {
   vga: 0 as *mut vga::Buffer //&mut vga::GLOBAL.value
 });
 
+// Hack, related to that above
+unsafe impl Send for Terminal {}
+
 struct Point(usize, usize);
 
 pub struct Terminal {

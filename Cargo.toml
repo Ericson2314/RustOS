@@ -54,9 +54,10 @@ git = "https://github.com/RustOS-Fork-Holding-Ground/libfringe"
 branch = "rustos"
 default-features = false
 
-[dependencies.lazy-static-spin]
-git = "https://github.com/RustOS-Fork-Holding-Ground/lazy-static-spin"
+[dependencies.lazy_static]
+git = "https://github.com/RustOS-Fork-Holding-Ground/lazy-static"
 branch = "rustos"
+features = ["no_std"]
 
 [dependencies.spin]
 git = "https://github.com/RustOS-Fork-Holding-Ground/spinlock-rs"

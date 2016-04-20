@@ -30,7 +30,7 @@ extern crate coreio as io;
 extern crate cpu;
 extern crate fringe;
 #[macro_use]
-extern crate lazy_static_spin;
+extern crate lazy_static;
 extern crate spin;
 extern crate void;
 
@@ -73,8 +73,8 @@ fn put_char(c: u8) {
   __print!("{}", c as char);
 }
 
-lazy_static_spin! {
-  static TEST: Vec<&'static str> = {
+lazy_static! {
+  static ref TEST: Vec<&'static str> = {
     let mut v = Vec::new();
     v.push("hi from lazy static");
     v
@@ -121,7 +121,7 @@ fn bootstrapped_main<S>(tl: &mut fringe::ThreadLocals<S>) -> void::Void
   test_allocator();
 
   debug!("Going to test lazy_static:");
-  debug!("{}", (*TEST.get_or_init())[0]);
+  debug!("{}", (*TEST)[0]);
 
   debug!("Going to interrupt: ");
   unsafe { arch::cpu::test_interrupt() };
