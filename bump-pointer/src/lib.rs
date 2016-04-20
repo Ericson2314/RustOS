@@ -1,4 +1,4 @@
-#![feature(no_std, allocator)]
+#![feature(allocator)]
 #![no_std]
 #![allocator]
 
