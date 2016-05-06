@@ -7,8 +7,8 @@ let
   settings = fetchFromGitHub {
     owner = "Ericson2314";
     repo = "nixos-configuration";
-    rev = "e58b956890aad567c22cfa825036580653b81030";
-    sha256 = "1x99wf4my91vcfybq8x8qzs44fv82cpyhafhnf3qss2lxpsqn2lz";
+    rev = "7a4fd62e381a86bc7af83995551feded3b15bc18";
+    sha256 = "0czqdbw114wyr2430515y9q82n8yzvx604n0qwqh29f8pvkdyz0m";
   };
 
   funs = callPackage "${settings}/user/.nixpkgs/rust-nightly.nix" { };
