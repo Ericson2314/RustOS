@@ -29,8 +29,8 @@ branch = "rustos"
 bitflags = "0.6"
 
 [dependencies.lazy_static]
-version = "0.2"
-features = ["no_std"]
+version = "0.2.1"
+features = ["spin_no_std"]
 
 [dependencies.log]
 version = "0.3.6"
@@ -72,7 +72,7 @@ path = "bump-pointer"
 
 [replace]
 "bitflags:0.6.0" = { git = "https://github.com/RustOS-Fork-Holding-Ground/bitflags", branch = "rustos" }
-"lazy_static:0.2.0" = { git = "https://github.com/RustOS-Fork-Holding-Ground/lazy-static", branch = "rustos" }
+"lazy_static:0.2.1" = { git = "https://github.com/RustOS-Fork-Holding-Ground/lazy-static", branch = "rustos" }
 "log:0.3.6" = { git = "https://github.com/RustOS-Fork-Holding-Ground/log", branch = "rustos" }
 
 "spin:0.4.0" = { git = "https://github.com/RustOS-Fork-Holding-Ground/spin", branch = "rustos" }
