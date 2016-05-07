@@ -14,25 +14,27 @@ let
   funs = callPackage "${settings}/user/.nixpkgs/rust-nightly.nix" { };
 
   rustcNightly = funs.rustc {
-    date = "2016-04-20";
-    hash = "0mwkaldhcqdy297hjggvv1gbmxhi7581c5byk3z404p3ic063zlc";
+    date = "2016-05-07";
+    hash = "0vpzwysgy2x94d8s2m87q9krldcpkwmqdma67ig93yhnw5z7iggf";
   };
 
   cargoNightly = funs.cargo {
-    date = "2016-04-20";
-    hash = "1harfb61rp1mwnh7mzr2x5y0xwvf5pd9r102k77pf2kmnsc7hq1r";
+    date = "2016-05-06";
+    hash = "0irmd46i62jvhk6cprg6mq3bf5b8qsxc07vqhcgfnzzra9nz84gg";
   };
+
+  stdDate = "2016-05-07";
 
   rustNightlyWithi686 = funs.rustcWithSysroots {
     rustc = rustcNightly;
     sysroots = [
       (funs.rust-std {
-        date = "2016-04-20";
-        hash = "08bcx86nkndmgi79vw12jj7s1a1gfzknl0g7i851jg81hq87y52k";
+        date = stdDate;
+        hash = "1gsdzvym1piy6ak9hz39hzjmaa6fg11p458dqb2anj2br5x76mq2";
       })
       (funs.rust-std {
-        date = "2016-04-20";
-        hash = "0sl2h501wm8qa6qj124c4mqjxblh1l1hpdacpdkw02xsv2xxkq0s";
+        date = stdDate;
+        hash = "1wa0bif9s48hkc77b13lam42xhgghf8gjrvl0mf5wx8p1dyxgiqw";
         system = "i686-linux";
       })
     ];
