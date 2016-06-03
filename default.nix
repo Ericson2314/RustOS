@@ -7,8 +7,8 @@ let
   settings = fetchFromGitHub {
     owner = "Ericson2314";
     repo = "nixos-configuration";
-    rev = "7a4fd62e381a86bc7af83995551feded3b15bc18";
-    sha256 = "0czqdbw114wyr2430515y9q82n8yzvx604n0qwqh29f8pvkdyz0m";
+    rev = "3b71fecbd51b28f58511f09deb0ed751e2c03d8d";
+    sha256 = "1g8gdfscimjmwgqdzrj56f24ki7zn7a7nh8jq3v0a565vifq7wrw";
   };
 
   funs = callPackage "${settings}/user/.nixpkgs/rust-nightly.nix" { };
@@ -55,6 +55,8 @@ in stdenv.mkDerivation {
     # We don't actually need prebuild std libs, but they're nice for testing libraries we
     # use, etc.
     (if release then rustcNightly else rustNightlyWithi686)
+  ] ++ stdenv.lib.optionalAttrs (!release) [
+    rustcNightly.doc
   ];
 
   src = ./.;
