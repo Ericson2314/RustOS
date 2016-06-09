@@ -55,7 +55,7 @@ in stdenv.mkDerivation {
     # We don't actually need prebuild std libs, but they're nice for testing libraries we
     # use, etc.
     (if release then rustcNightly else rustNightlyWithi686)
-  ] ++ stdenv.lib.optionalAttrs (!release) [
+  ] ++ stdenv.lib.optionals (!release) [
     rustcNightly.doc
   ];
 
