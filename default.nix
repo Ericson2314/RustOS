@@ -1,5 +1,5 @@
 { stdenv, callPackage, fetchFromGitHub, runCommand, makeWrapper, pkgsi686Linux
-, gdb, nasm, qemu, valgrind
+, gdb, nasm, qemu, bochs, valgrind
 , release ? true
 }:
 
@@ -51,7 +51,7 @@ in stdenv.mkDerivation {
   name = "RustOS";
 
   nativeBuildInputs = [
-    cc32 gdb nasm qemu valgrind cargoNightly
+    cc32 gdb nasm qemu bochs valgrind cargoNightly
     # We don't actually need prebuild std libs, but they're nice for testing libraries we
     # use, etc.
     (if release then rustcNightly else rustNightlyWithi686)
