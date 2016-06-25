@@ -7,34 +7,30 @@ let
   settings = fetchFromGitHub {
     owner = "Ericson2314";
     repo = "nixos-configuration";
-    rev = "3b71fecbd51b28f58511f09deb0ed751e2c03d8d";
-    sha256 = "1g8gdfscimjmwgqdzrj56f24ki7zn7a7nh8jq3v0a565vifq7wrw";
+    rev = "7a24ff14977cf0aee7c62b391233e1b4a892ff3a";
+    sha256 = "08z0lwnfqm653i40bdq54pzjryr45lb17ckdjw8hz9s07xvwpx09";
   };
 
   funs = callPackage "${settings}/user/.nixpkgs/rust-nightly.nix" { };
 
-  rustcNightly = funs.rustc {
-    date = "2016-06-09";
-    hash = "1hnkw7gd7nihc3jqkckp9hgashdc8vmvc92qvxfyalxrp84fhyr1";
-  };
-
   cargoNightly = funs.cargo {
-    date = "2016-06-09";
-    hash = "1p0xkpfk66jq0iladqfrhqk1zc1jr9n2v2lqyf7jjbrmqx2ja65i";
+    date = "2016-06-24";
   };
 
-  stdDate = "2016-06-09";
+  rustDate = "2016-06-24";
+
+  rustcNightly = funs.rustc {
+    date = rustDate;
+  };
 
   rustNightlyWithi686 = funs.rustcWithSysroots {
     rustc = rustcNightly;
     sysroots = [
       (funs.rust-std {
-        date = stdDate;
-        hash = "1261y0wqczipn0fv3q3d1yl6q3djisrlji4fs94sabzpwwsjq4cc";
+        date = rustDate;
       })
       (funs.rust-std {
-        date = stdDate;
-        hash = "1z0q7qxvf6rc2xa4bmjfa51ya2yq7ba2wvcgz5rvyv36cjdnsnrk";
+        date = rustDate;
         system = "i686-linux";
       })
     ];
