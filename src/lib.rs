@@ -11,7 +11,6 @@
 #![feature(slice_patterns)]
 #![feature(const_fn)]
 #![feature(core_intrinsics)]
-#![feature(raw)]
 #![feature(unsize)]
 #![feature(naked_functions)]
 
