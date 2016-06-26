@@ -448,7 +448,7 @@ impl io::Read for Port
   type Err = Void;
 
   fn read(&mut self, buf: &mut [u8]) -> Result<usize, Void> {
-    Ok(match &mut *buf {
+    Ok(match *buf {
       []               => 0,
       [ref mut a, _..] => {
         *a = self.in8();
@@ -470,7 +470,7 @@ impl io::Write for Port
   type Err = Void;
 
   fn write(&mut self, buf: &[u8]) -> Result<usize, Void> {
-    Ok(match buf {
+    Ok(match *buf {
       []       => 0,
       [a, _..] => {
         self.out8(a);
