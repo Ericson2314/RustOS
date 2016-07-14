@@ -14,10 +14,10 @@ let
   funs = callPackage "${settings}/user/.nixpkgs/rust-nightly.nix" { };
 
   cargoNightly = funs.cargo {
-    date = "2016-07-07";
+    date = "2016-07-12";
   };
 
-  rustDate = "2016-07-07";
+  rustDate = "2016-07-12";
 
   rustcNightly = funs.rustc {
     date = rustDate;
