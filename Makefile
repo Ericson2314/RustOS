@@ -3,7 +3,8 @@
 AS=as -march=i386 --32
 LD=ld -melf_i386 -nostdlib
 QEMU=qemu-system-i386
-TARGET=i686-unknown-linux-gnu
+TARGET_SRC=x86
+TARGET=target#i686-unknown-none-gnu
 QEMUARGS=-device rtl8139,vlan=0 -net user,id=net0,vlan=0 -net dump,vlan=0,file=/tmp/rustos-dump.pcap -d int,cpu_reset
 
 .PHONY: all
@@ -25,9 +26,9 @@ vb: boot.iso
 
 .PHONY: target/$(TARGET)/debug/librustos*.a
 target/$(TARGET)/debug/librustos*.a: Cargo.toml
-	cargo build --target $(TARGET) --verbose
+	cargo build --target=src/arch/$(TARGET_SRC)/target.json --verbose
 
-boot.bin: src/arch/x86/link.ld \
+boot.bin: src/arch/$(TARGET_SRC)/link.ld \
 		target/$(TARGET)/debug/deps/boot.o \
 		target/$(TARGET)/debug/librustos*.a
 	$(LD) --gc-sections -o $@ -T $^
@@ -39,7 +40,7 @@ boot.iso: boot.bin
 target/$(TARGET)/debug/deps/:
 	mkdir -p $@
 
-target/$(TARGET)/debug/deps/%.o: src/arch/x86/%.s target/$(TARGET)/debug/deps/
+target/$(TARGET)/debug/deps/%.o: src/arch/$(TARGET_SRC)/%.s target/$(TARGET)/debug/deps/
 	$(AS)  -o $@ $<
 
 .PHONY: clean
