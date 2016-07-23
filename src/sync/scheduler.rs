@@ -1,13 +1,14 @@
-use core::marker::Unsize;
-
 use collections::LinkedList;
 
-use fringe::{Context, ThreadLocals, Stack};
+use fringe::session::ThreadLocals;
+use fringe::session::cycle::{C1, Cycle};
 use spin;
-use void::{self, Void};
+use void::Void;
+
+use sync::stack::BoxStack;
 
 /// Represents a thread that yeilded of its own accord, and does not expect anything
-struct Yielded(pub Context<'static, (Option<Yielded>, spin::MutexGuard<'static, Scheduler>)>);
+struct Yielded(C1<'static, BoxStack, spin::MutexGuard<'static, Scheduler>>);
 
 /// Queue of threadfs waiting to be run. Current thread is NOT in queue.
 pub struct Scheduler {
@@ -40,38 +41,31 @@ fn put_back(old: Option<Yielded>, mut guard: SchedulerCapability)
 }
 
 pub trait SchedulerCapabilityExt {
- #[inline]
-  fn spawn<S, F>(self, stack: S, f: F)
-    where S: Stack + Send + 'static,
-          F: FnOnce(&mut ThreadLocals<S>) -> Void + Send + 'static;
+  #[inline]
+  fn spawn<F>(self, stack: BoxStack, f: F)
+    where F: FnOnce(&mut ThreadLocals<BoxStack>) -> Void + Send + 'static;
 
   #[inline]
-  fn yield_cur<S>(self, maybe_stack: Option<&mut ThreadLocals<S>>)
-    where S: Unsize<Stack> + Send;
+  fn yield_cur(self, maybe_stack: Option<&mut ThreadLocals<BoxStack>>);
 
   #[inline]
-  fn exit<S>(self,
-                 maybe_stack: Option<&mut ThreadLocals<S>>)
-                 -> !
-    where S: Unsize<Stack> + Send;
+  fn exit(self, maybe_stack: Option<&mut ThreadLocals<BoxStack>>) -> !;
 }
 
 impl SchedulerCapabilityExt for SchedulerCapability<'static> {
   #[inline]
-  fn spawn<S, F>(mut self, stack: S, f: F)
-    where S: Stack + Send + 'static,
-          F: FnOnce(&mut ThreadLocals<S>) -> Void + Send + 'static
+  fn spawn<F>(mut self, stack: BoxStack, f: F)
+    where F: FnOnce(&mut ThreadLocals<BoxStack>) -> Void + Send + 'static
   {
-    let ctx = Context::new(stack, |tls, (old, guard)| {
-      put_back(old, guard);
+    let ctx = C1::new(stack, |tls, (old, guard)| {
+      put_back(old.map(Yielded), guard);
       f(tls)
     });
     self.run_queue.push_back(Yielded(ctx));
   }
 
   #[inline]
-  fn yield_cur<S>(mut self, maybe_stack: Option<&mut ThreadLocals<S>>)
-    where S: Unsize<Stack> + Send
+  fn yield_cur(mut self, maybe_stack: Option<&mut ThreadLocals<BoxStack>>)
   {
     let next = match self.run_queue.pop_front() {
       Some(n) => n,
@@ -80,15 +74,12 @@ impl SchedulerCapabilityExt for SchedulerCapability<'static> {
         return
       },
     };
-    let (old, guard) = next.0.switch(maybe_stack, |ctx| (Some(Yielded(ctx)), self));
-    put_back(old, guard);
+    let (old, guard) = next.0.swap(maybe_stack, self);
+    put_back(old.map(Yielded), guard);
   }
 
   #[inline]
-  fn exit<S>(mut self,
-             maybe_stack: Option<&mut ThreadLocals<S>>)
-             -> !
-    where S: Unsize<Stack> + Send
+  fn exit(mut self, maybe_stack: Option<&mut ThreadLocals<BoxStack>>) -> !
   {
     let next = match self.run_queue.pop_front() {
       Some(n) => n,
@@ -98,7 +89,7 @@ impl SchedulerCapabilityExt for SchedulerCapability<'static> {
         ::abort()
       },
     };
-    void::unreachable(next.0.switch(maybe_stack, |_| (None, self)))
+    next.0.kontinue(maybe_stack, self)
   }
 }
 
@@ -106,9 +97,7 @@ fn inner_thread_test(arg: usize) {
   debug!("arg is {}", arg)
 }
 
-fn test_thread<S>(tl: &mut ThreadLocals<S>) -> Void
-  where S: Stack + Send + 'static
-{
+fn test_thread(tl: &mut ThreadLocals<BoxStack>) -> Void {
   debug!("in a test thread!");
   inner_thread_test(11);
   let s = lock_scheduler();
@@ -116,11 +105,7 @@ fn test_thread<S>(tl: &mut ThreadLocals<S>) -> Void
   s.exit(Some(tl))
 }
 
-pub fn thread_stuff<S>(tl: &mut ThreadLocals<S>)
-  where S: Stack + Send + 'static
-{
-  use ::sync::BoxStack;
-
+pub fn thread_stuff(tl: &mut ThreadLocals<BoxStack>) {
   debug!("starting thread test");
   let s = lock_scheduler();
 

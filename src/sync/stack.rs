@@ -14,13 +14,14 @@ impl BoxStack {
 }
 
 impl Stack for BoxStack {
-  fn top(&mut self) -> *mut u8 {
-    let l = self.0.len() as isize;
-    unsafe { (&mut*self.0).as_mut_ptr().offset(l) }
+  fn top(&self) -> *mut u8 {
+    let p: &[u8] = &*self.0;
+    let raw_top = unsafe { p.as_ptr().offset(p.len() as isize) };
+    (raw_top as usize & !0xF) as _
   }
 
-  fn limit(&self) -> *const u8 {
-    (&*self.0).as_ptr()
+  fn limit(&self) -> *mut u8 {
+    (&*self.0).as_ptr() as _
   }
 
 }

@@ -1,6 +1,5 @@
 #![no_std]
 
-
 #![allow(improper_ctypes)]
 
 #![feature(asm)]
@@ -11,7 +10,6 @@
 #![feature(slice_patterns)]
 #![feature(const_fn)]
 #![feature(core_intrinsics)]
-#![feature(unsize)]
 #![feature(naked_functions)]
 
 #![feature(alloc, collections)]
@@ -35,13 +33,6 @@ extern crate void;
 
 extern crate bump_pointer;
 
-use collections::Vec;
-
-use multiboot::multiboot_info;
-use pci::Pci;
-use driver::DriverManager;
-use sync::scheduler::{self, SchedulerCapabilityExt};
-
 #[macro_use]
 mod log_impl;
 pub mod arch;
@@ -53,6 +44,14 @@ mod rtl8139;
 mod driver;
 mod net;
 mod sync;
+
+use collections::Vec;
+
+use multiboot::multiboot_info;
+use pci::Pci;
+use driver::DriverManager;
+use sync::scheduler::{self, SchedulerCapabilityExt};
+use sync::stack::BoxStack;
 
 
 fn test_allocator() {
@@ -108,11 +107,13 @@ pub extern "C" fn main(magic: u32, info: *mut multiboot_info) -> ! {
   scheduler::lock_scheduler().spawn(sync::BoxStack::new(512),
                                     bootstrapped_main);
   debug!("start scheduling...");
-  scheduler::lock_scheduler().exit(fringe::NATIVE_THREAD_LOCALS) // okay, scheduler, take it away!
+
+  // okay, scheduler, take it away!
+  scheduler::lock_scheduler().exit(fringe::session::native_thread_locals())
 }
 
-fn bootstrapped_main<S>(tl: &mut fringe::ThreadLocals<S>) -> void::Void
-  where S: fringe::Stack + Send + 'static
+fn bootstrapped_main(tl: &mut fringe::session::ThreadLocals<BoxStack>)
+                     -> void::Void
 {
   debug!("kernel main thread start!");
 
