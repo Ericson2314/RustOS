@@ -152,19 +152,6 @@ fn pci_stuff() {
 
 }
 
-// Calls are generated to these
-
-#[no_mangle]
-pub extern "C" fn __morestack() {
-  panic!("Called `__morestack`, wtf");
-}
-
-#[no_mangle]
-#[allow(non_snake_case)]
-pub extern "C" fn _Unwind_Resume() {
-  panic!("Called `_Unwind_Resume`, wtf");
-}
-
 #[no_mangle]
 pub extern "C" fn abort() -> ! {
   unsafe {
@@ -173,9 +160,6 @@ pub extern "C" fn abort() -> ! {
     core::intrinsics::unreachable();
   }
 }
-
-#[lang = "eh_personality"]
-extern fn eh_personality() {}
 
 // for deriving
 #[doc(hidden)]
