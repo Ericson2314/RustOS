@@ -31,7 +31,7 @@ impl Scheduler {
   }
 }
 
-fn put_back(old: Option<Yielded>, mut guard: SchedulerCapability)
+fn put_back(old: Option<Yielded>, mut guard: &mut SchedulerCapability)
 {
   let ctx = match old {
     None      => return,
@@ -42,11 +42,11 @@ fn put_back(old: Option<Yielded>, mut guard: SchedulerCapability)
 
 pub trait SchedulerCapabilityExt {
   #[inline]
-  fn spawn<F>(self, stack: BoxStack, f: F)
+  fn spawn<F>(&mut self, stack: BoxStack, f: F)
     where F: FnOnce(&mut ThreadLocals<BoxStack>) -> Void + Send + 'static;
 
   #[inline]
-  fn yield_cur(self, maybe_stack: Option<&mut ThreadLocals<BoxStack>>);
+  fn yield_cur(self, maybe_stack: Option<&mut ThreadLocals<BoxStack>>) -> Self;
 
   #[inline]
   fn exit(self, maybe_stack: Option<&mut ThreadLocals<BoxStack>>) -> !;
@@ -54,11 +54,12 @@ pub trait SchedulerCapabilityExt {
 
 impl SchedulerCapabilityExt for SchedulerCapability<'static> {
   #[inline]
-  fn spawn<F>(mut self, stack: BoxStack, f: F)
+  fn spawn<F>(&mut self, stack: BoxStack, f: F)
     where F: FnOnce(&mut ThreadLocals<BoxStack>) -> Void + Send + 'static
   {
-    let ctx = C1::new(stack, |tls, (old, guard)| {
-      put_back(old.map(Yielded), guard);
+    let ctx = C1::new(stack, |tls, (old, mut guard)| {
+      put_back(old.map(Yielded), &mut guard);
+      drop(guard);
       f(tls)
     });
     self.run_queue.push_back(Yielded(ctx));
@@ -66,16 +67,18 @@ impl SchedulerCapabilityExt for SchedulerCapability<'static> {
 
   #[inline]
   fn yield_cur(mut self, maybe_stack: Option<&mut ThreadLocals<BoxStack>>)
+               -> Self
   {
     let next = match self.run_queue.pop_front() {
       Some(n) => n,
       None    => {
         info!("The run queue is empty, will not yield");
-        return
+        return self
       },
     };
-    let (old, guard) = next.0.swap(maybe_stack, self);
-    put_back(old.map(Yielded), guard);
+    let (old, mut guard) = next.0.swap(maybe_stack, self);
+    put_back(old.map(Yielded), &mut guard);
+    guard
   }
 
   #[inline]
@@ -107,11 +110,12 @@ fn test_thread(tl: &mut ThreadLocals<BoxStack>) -> Void {
 
 pub fn thread_stuff(tl: &mut ThreadLocals<BoxStack>) {
   debug!("starting thread test");
-  let s = lock_scheduler();
+  let mut s = lock_scheduler();
 
   debug!("orig sched {:p}", &s);
   s.spawn(BoxStack::new(512), test_thread);
   debug!("schedule okay");
-  lock_scheduler().yield_cur(Some(tl));
+  s = s.yield_cur(Some(tl));
+  drop(s);
   debug!("back");
 }

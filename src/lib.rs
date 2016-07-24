@@ -103,13 +103,14 @@ pub extern "C" fn main(magic: u32, info: *mut multiboot_info) -> ! {
   debug!("And enable Interrupts");
   unsafe { cpu::enable_interrupts() };
 
-  // we're going to now enter the scheduler to do the rest
-  scheduler::lock_scheduler().spawn(sync::BoxStack::new(512),
+  // We're going to now enter the scheduler to do the rest
+  let mut s = scheduler::lock_scheduler();
+  s.spawn(sync::BoxStack::new(512),
                                     bootstrapped_main);
   debug!("start scheduling...");
 
-  // okay, scheduler, take it away!
-  scheduler::lock_scheduler().exit(fringe::session::native_thread_locals())
+  // Okay, scheduler, take it away!
+  s.exit(fringe::session::native_thread_locals())
 }
 
 fn bootstrapped_main(tl: &mut fringe::session::ThreadLocals<BoxStack>)
