@@ -4,37 +4,37 @@
 }:
 
 let
-  settings = fetchFromGitHub {
-    owner = "Ericson2314";
-    repo = "nixos-configuration";
-    rev = "9da64ec7e950168a6e8bab53ef0ba8bd92781f6b";
-    sha256 = "0vznn90b38yx62p1mv8vr2qpzw50cryabm0fz90cd4l8v4n20n8a";
+  rust-nightly-nix = fetchFromGitHub {
+    owner = "solson";
+    repo = "rust-nightly-nix";
+    rev = "0021290418184a495ee8f9b00bf8e33a3463b653";
+    sha256 = "0zh4153q0rn9kg2ssjddcxgckxf0ak09bcbrxx06n14ad7726gp4";
   };
 
-  funs = callPackage "${settings}/user/.nixpkgs/rust-nightly.nix" { };
+  funs = callPackage rust-nightly-nix { };
 
   cargoNightly = funs.cargo {
-    date = "2016-07-17";
+    #date = "2016-09-09";
   };
 
-  rustDate = "2016-07-17";
+  #rustDate = "2016-09-09";
 
   rustcNightly = funs.rustc {
-    date = rustDate;
+    #date = rustDate;
   };
 
   rustNightlyWithi686 = funs.rustcWithSysroots {
     rustc = rustcNightly;
     sysroots = [
       (funs.rust-std {
-        date = rustDate;
+        #date = rustDate;
       })
       (funs.rust-std {
-        date = rustDate;
+        #date = rustDate;
         system = "x86_64-unknown-linux-gnu";
       })
       (funs.rust-std {
-        date = rustDate;
+        #date = rustDate;
         system = "i686-unknown-linux-gnu";
       })
     ];

@@ -10,7 +10,6 @@
 *.a
 *.bc
 **/target/
-**/Cargo.lock
 
 # preprocessed assembly
 /*.s
