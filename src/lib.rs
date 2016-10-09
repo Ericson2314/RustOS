@@ -47,11 +47,12 @@ mod sync;
 
 use collections::Vec;
 
+use fringe::Owned;
+
 use multiboot::multiboot_info;
 use pci::Pci;
 use driver::DriverManager;
 use sync::scheduler::{self, SchedulerCapabilityExt};
-use sync::stack::BoxStack;
 
 
 fn test_allocator() {
@@ -105,7 +106,7 @@ pub extern "C" fn main(magic: u32, info: *mut multiboot_info) -> ! {
 
   // We're going to now enter the scheduler to do the rest
   let mut s = scheduler::lock_scheduler();
-  s.spawn(sync::BoxStack::new(512),
+  s.spawn(fringe::OwnedStack::new(512),
                                     bootstrapped_main);
   debug!("start scheduling...");
 
@@ -113,7 +114,7 @@ pub extern "C" fn main(magic: u32, info: *mut multiboot_info) -> ! {
   s.exit(fringe::session::native_thread_locals())
 }
 
-fn bootstrapped_main(tl: &mut fringe::session::ThreadLocals<BoxStack>)
+fn bootstrapped_main(tl: &mut fringe::session::ThreadLocals<OwnedStack>)
                      -> void::Void
 {
   debug!("kernel main thread start!");

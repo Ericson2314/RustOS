@@ -58,6 +58,7 @@ branch = "rustos"
 git = "https://github.com/RustOS-Fork-Holding-Ground/libfringe"
 branch = "rustos"
 default-features = false
+features = ["allocate"]
 
 [dependencies.void]
 version = "1"
@@ -75,7 +76,7 @@ path = "bump-pointer"
 "lazy_static:0.2.1" = { git = "https://github.com/RustOS-Fork-Holding-Ground/lazy-static", branch = "rustos" }
 "log:0.3.6" = { git = "https://github.com/RustOS-Fork-Holding-Ground/log", branch = "rustos" }
 
-"spin:0.4.3" = { git = "https://github.com/RustOS-Fork-Holding-Ground/spin", branch = "rustos" }
+"spin:0.4.4" = { git = "https://github.com/RustOS-Fork-Holding-Ground/spin", branch = "rustos" }
 "void:1.0.2" = { git = "https://github.com/RustOS-Fork-Holding-Ground/rust-void", branch = "rustos" }
 
 [profile.dev]
